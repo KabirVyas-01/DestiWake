@@ -1,0 +1,72 @@
+[
+  {
+    "id": "gct",
+    "name": "Grand Central Terminal",
+    "city": "New York, NY",
+    "lat": 40.7527,
+    "lng": -73.9772,
+    "lines": ["Metro-North Hudson", "Harlem", "New Haven", "Subway 4/5/6/7/S"],
+    "type": "terminal",
+    "defaultRadiusKm": 10.0
+  },
+  {
+    "id": "stamford",
+    "name": "Stamford Station",
+    "city": "Stamford, CT",
+    "lat": 41.0469,
+    "lng": -73.5425,
+    "lines": ["Metro-North New Haven Line", "Amtrak Northeast Regional"],
+    "type": "station",
+    "defaultRadiusKm": 8.0
+  },
+  {
+    "id": "penn",
+    "name": "Penn Station (Moynihan Train Hall)",
+    "city": "New York, NY",
+    "lat": 40.7505,
+    "lng": -73.9934,
+    "lines": ["Amtrak Acela", "LIRR", "NJ Transit", "Subway A/C/E/1/2/3"],
+    "type": "terminal",
+    "defaultRadiusKm": 10.0
+  },
+  {
+    "id": "union_chi",
+    "name": "Union Station",
+    "city": "Chicago, IL",
+    "lat": 41.8787,
+    "lng": -87.6403,
+    "lines": ["Amtrak Empire Builder", "Metra BNSF", "Metra MD-W"],
+    "type": "terminal",
+    "defaultRadiusKm": 12.0
+  },
+  {
+    "id": "jfk_exp",
+    "name": "JFK Airport Central Terminal",
+    "city": "Queens, NY",
+    "lat": 40.6413,
+    "lng": -73.7781,
+    "lines": ["AirTrain JFK", "Express Shuttle Bus 302"],
+    "type": "airport",
+    "defaultRadiusKm": 15.0
+  },
+  {
+    "id": "wall_st",
+    "name": "Wall Street Station",
+    "city": "New York, NY",
+    "lat": 40.7069,
+    "lng": -74.0094,
+    "lines": ["Subway 4/5 Line", "Subway 2/3 Line"],
+    "type": "metro",
+    "defaultRadiusKm": 1.5
+  },
+  {
+    "id": "86th_st",
+    "name": "86th Street Station",
+    "city": "New York, NY",
+    "lat": 40.7795,
+    "lng": -73.9556,
+    "lines": ["Subway 4/5/6 Line", "Q Line"],
+    "type": "metro",
+    "defaultRadiusKm": 1.5
+  }
+]

@@ -1,0 +1,50 @@
+{
+  "totalNaps": 48,
+  "onTimePercentage": 100,
+  "totalSleepMinutes": 2055,
+  "averageBufferMinutes": 8.4,
+  "recentSessions": [
+    {
+      "id": "nap_048",
+      "date": "2026-10-04T18:42:00Z",
+      "origin": "Stamford Station",
+      "destination": "Grand Central Terminal",
+      "vehicle": "train",
+      "speedAvgKmH": 88,
+      "distanceCoveredKm": 54.2,
+      "napDurationMinutes": 38,
+      "geofenceRadiusKm": 10.0,
+      "status": "COMPLETED",
+      "cognitiveSolved": true,
+      "puzzleTimeSec": 4.2
+    },
+    {
+      "id": "nap_047",
+      "date": "2026-10-03T08:15:00Z",
+      "origin": "86th Street Station",
+      "destination": "Wall Street Station",
+      "vehicle": "metro",
+      "speedAvgKmH": 38,
+      "distanceCoveredKm": 11.4,
+      "napDurationMinutes": 16,
+      "geofenceRadiusKm": 1.5,
+      "status": "COMPLETED",
+      "cognitiveSolved": true,
+      "puzzleTimeSec": 3.8
+    },
+    {
+      "id": "nap_046",
+      "date": "2026-10-01T21:10:00Z",
+      "origin": "New Haven Union",
+      "destination": "Grand Central Terminal",
+      "vehicle": "train",
+      "speedAvgKmH": 92,
+      "distanceCoveredKm": 118.0,
+      "napDurationMinutes": 74,
+      "geofenceRadiusKm": 12.0,
+      "status": "COMPLETED",
+      "cognitiveSolved": true,
+      "puzzleTimeSec": 5.1
+    }
+  ]
+}

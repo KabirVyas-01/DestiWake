@@ -1,0 +1,17 @@
+{
+  "short_name": "DestiWake",
+  "name": "DestiWake — Intelligent Transit Wake-Up Alarm",
+  "description": "Location-based GPS alarm and nap assistant for train, metro, and bus commuters.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "destiwake",
+  "version": "1.0.0",
+  "description": "DestiWake (GeoNap) — Intelligent Location-Based Transit Wake-Up Alarm & Nap Assistant",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "dev:py": "python server/server.py",
+    "test": "echo \"Running API health checks...\" && curl http://localhost:5000/api/health"
+  },
+  "keywords": [
+    "gps",
+    "transit",
+    "alarm",
+    "geofence",
+    "nap",
+    "commute",
+    "subway",
+    "train",
+    "audio-synthesizer"
+  ],
+  "author": "DestiWake Team",
+  "license": "MIT"
+}
