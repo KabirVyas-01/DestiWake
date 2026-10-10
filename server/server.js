@@ -3,17 +3,21 @@
  * --------------------------------------------
  * Zero-dependency native Node.js REST API & static file server.
  * Supports geofencing engine, station database, commute session logging,
- * puzzle verification, and video streaming with HTTP byte-range requests.
+ * puzzle verification, live trip sharing, and video streaming with HTTP byte-range requests.
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 
 const PORT = process.env.PORT || 5000;
 const BASE_DIR = path.resolve(__dirname, '..');
 const DATA_DIR = path.resolve(__dirname, 'data');
+
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
 // MIME types dictionary
 const MIME_TYPES = {
@@ -114,7 +118,8 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
-  const parsedUrl = url.parse(req.url, true);
+  const host = req.headers.host || `localhost:${PORT}`;
+  const parsedUrl = new URL(req.url, `http://${host}`);
   const pathname = parsedUrl.pathname;
 
   // --- REST API ENDPOINTS ---
@@ -126,6 +131,8 @@ const server = http.createServer(async (req, res) => {
         status: 'online',
         service: 'DestiWake GeoNap Backend (Node.js)',
         version: '1.0.0',
+        engine: 'Client/Server Hybrid GIS',
+        activeTripShares: activeShares.size,
         uptimeSec: Math.round(process.uptime()),
         timestamp: new Date().toISOString()
       });
@@ -134,9 +141,9 @@ const server = http.createServer(async (req, res) => {
     // 2. Stations Database Search
     if (req.method === 'GET' && pathname === '/api/stations') {
       const stations = readJsonFile(path.join(DATA_DIR, 'stations.json'), []);
-      const query = (parsedUrl.query.q || '').trim().toLowerCase();
+      const query = (parsedUrl.searchParams.get('q') || '').trim().toLowerCase();
       const results = query
-        ? stations.filter(s => s.name.toLowerCase().includes(query) || s.city.toLowerCase().includes(query))
+        ? stations.filter(s => (s.name && s.name.toLowerCase().includes(query)) || (s.city && s.city.toLowerCase().includes(query)))
         : stations;
       return sendJson(res, 200, { stations: results });
     }
@@ -167,7 +174,7 @@ const server = http.createServer(async (req, res) => {
 
       const newSession = {
         id: `nap_${Date.now()}`,
-        date: new Date().toISOString(),
+        date: body.date || new Date().toISOString(),
         origin: body.origin || 'Origin Station',
         destination: body.destination || 'Destination Station',
         vehicle: body.vehicle || 'train',
@@ -179,9 +186,10 @@ const server = http.createServer(async (req, res) => {
         cognitiveSolved: body.cognitiveSolved !== false
       };
 
+      history.recentSessions = history.recentSessions || [];
       history.recentSessions.unshift(newSession);
-      history.totalNaps += 1;
-      history.totalSleepMinutes += newSession.napDurationMinutes;
+      history.totalNaps = (history.totalNaps || 0) + 1;
+      history.totalSleepMinutes = (history.totalSleepMinutes || 0) + newSession.napDurationMinutes;
       writeJsonFile(historyFile, history);
 
       return sendJson(res, 201, { success: true, session: newSession, history });
@@ -211,7 +219,22 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 6. Geofence & Proximity Detection Verification
+    // 6. Cognitive Puzzle Verification
+    if (req.method === 'POST' && pathname === '/api/puzzle/verify') {
+      const body = await parseRequestBody(req);
+      const num1 = parseInt(body.num1 || 0, 10);
+      const num2 = parseInt(body.num2 || 0, 10);
+      const submitted = parseInt(body.submitted || 0, 10);
+      const isCorrect = (num1 + num2) === submitted;
+
+      return sendJson(res, 200, {
+        verified: isCorrect,
+        correctAnswer: num1 + num2,
+        message: isCorrect ? 'Cognitive Awake Verification Passed!' : 'Incorrect answer, try again.'
+      });
+    }
+
+    // 7. Geofence & Proximity Detection Verification
     if (req.method === 'POST' && pathname === '/api/geofence/check') {
       const body = await parseRequestBody(req);
       const currLat = parseFloat(body.currentLat || 0);
@@ -243,7 +266,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    // 7. Live Emergency Trip Share
+    // 8. Live Emergency Trip Share
     if (req.method === 'POST' && pathname === '/api/share/live') {
       const body = await parseRequestBody(req);
       const shareId = `trip_${Math.floor(Math.random() * 89999 + 10000)}`;
@@ -253,10 +276,20 @@ const server = http.createServer(async (req, res) => {
         destination: body.destination || '',
         distanceLeftKm: body.distanceLeftKm || 0,
         etaMinutes: body.etaMinutes || 0,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        shareUrl: `http://${host}/#share=${shareId}`
       };
       activeShares.set(shareId, shareData);
       return sendJson(res, 201, { shareId, share: shareData });
+    }
+
+    // 9. Get Live Trip Share
+    if (req.method === 'GET' && pathname.startsWith('/api/share/')) {
+      const shareId = pathname.replace('/api/share/', '').trim();
+      if (activeShares.has(shareId)) {
+        return sendJson(res, 200, { share: activeShares.get(shareId) });
+      }
+      return sendJson(res, 404, { error: 'Trip share not found or expired' });
     }
 
     return sendJson(res, 404, { error: 'API route not found' });

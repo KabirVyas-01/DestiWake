@@ -52,6 +52,8 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdn.tailwindcss.com"></script>
   
   <script id="tailwind-config">
@@ -119,9 +121,9 @@
         </div>
       </div>
       <div class="flex items-center gap-1.5 flex-shrink-0">
-        <div class="flex items-center gap-1 px-2 py-1 rounded bg-surface-container-high/80 border border-outline-variant/40" title="GPS Signal">
-          <span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" id="gpsIndicatorDot"></span>
-          <span class="text-[10px] font-label font-medium text-tertiary tracking-tight" id="gpsIndicatorText">±4m GPS</span>
+        <div class="flex items-center gap-1 px-2 py-1 rounded bg-surface-container-high/80 border border-outline-variant/40" title="GPS Status">
+          <span class="w-1.5 h-1.5 rounded-full bg-zinc-500" id="gpsIndicatorDot"></span>
+          <span class="text-[10px] font-label font-medium text-zinc-400 tracking-tight" id="gpsIndicatorText">GPS Standby</span>
         </div>
         <button id="wakeLockBtn" aria-label="Toggle Wake Lock" class="flex items-center gap-1 px-2 py-1 rounded bg-primary-container/20 border border-primary/30 hover:bg-primary-container/30 transition-colors" title="Screen Wake Lock">
           <span class="material-symbols-outlined text-primary text-[13px]" id="wakeLockIcon">bolt</span>
@@ -155,14 +157,14 @@
           <div class="flex flex-col items-center justify-center p-1.5 rounded-lg bg-surface-container">
             <div class="flex items-center gap-1">
               <span class="material-symbols-outlined text-primary text-sm">lock_clock</span>
-              <span class="text-xs font-semibold text-primary tracking-tight">Active</span>
+              <span class="text-xs font-semibold text-primary tracking-tight" id="statusWakeLockText">Active</span>
             </div>
             <span class="text-[10px] text-on-surface-variant uppercase tracking-wider font-label mt-0.5">Wake Lock</span>
           </div>
           <div class="flex flex-col items-center justify-center p-1.5 rounded-lg bg-surface-container">
             <div class="flex items-center gap-1">
               <span class="material-symbols-outlined text-tertiary text-sm">battery_charging_full</span>
-              <span class="text-xs font-semibold text-on-surface tracking-tight" id="pollingBadge">15s Eco</span>
+              <span class="text-xs font-semibold text-on-surface tracking-tight" id="pollingBadge">15s Normal</span>
             </div>
             <span class="text-[10px] text-on-surface-variant uppercase tracking-wider font-label mt-0.5">Polling</span>
           </div>
@@ -171,80 +173,44 @@
 
       <!-- Interactive Live Transit & Map Telemetry Card -->
       <section class="w-full relative overflow-hidden rounded-xl bg-surface-container-low shadow-md border border-outline-variant/40">
-        <!-- Stylized Dark Night Route Vector Canvas -->
-        <div class="relative w-full h-56 bg-surface-container-lowest overflow-hidden">
-          <!-- Decorative coordinate grid mesh -->
-          <svg class="absolute inset-0 w-full h-full opacity-15" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
-                <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#52525b" stroke-width="0.5"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
+        <!-- Real Interactive World Map Canvas (Leaflet + OpenStreetMap / Satellite + Google Maps Quick Link) -->
+        <div class="relative w-full h-64 bg-surface-container-lowest overflow-hidden">
+          <!-- Leaflet Live Map Root -->
+          <div id="liveLeafletMap" class="w-full h-full z-0"></div>
 
-          <!-- Night Vector Map Graphic -->
-          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 380 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="routeGradient" x1="40" y1="170" x2="310" y2="60" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#34d399"/>
-                <stop offset="65%" stop-color="#a78bfa"/>
-                <stop offset="100%" stop-color="#7c3aed"/>
-              </linearGradient>
-              <radialGradient id="geofenceGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.35"/>
-                <stop offset="70%" stop-color="#a78bfa" stop-opacity="0.12"/>
-                <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
-              </radialGradient>
-            </defs>
+          <!-- Google Maps Destination Search Bar & Overlay Controls -->
+          <div class="absolute top-2.5 inset-x-2.5 z-20 flex items-center gap-1.5">
+            <div class="flex-1 relative flex items-center bg-surface-container-highest/95 backdrop-blur-md rounded-xl px-2.5 py-1.5 border border-outline-variant/60 shadow-lg">
+              <span class="material-symbols-outlined text-primary text-[17px] mr-1.5 flex-shrink-0">place</span>
+              <input id="mapPlaceSearchInput" type="text" placeholder="Search Google Maps destination..." autocomplete="off" class="w-full bg-transparent text-xs text-on-surface font-medium placeholder-on-surface-variant/70 focus:outline-none"/>
+              <button id="mapSearchGoBtn" aria-label="Search destination" class="p-1 text-primary hover:text-on-surface transition-colors flex-shrink-0" title="Search Location">
+                <span class="material-symbols-outlined text-[16px]">search</span>
+              </button>
+              <!-- Search Results Dropdown -->
+              <div id="mapSearchResults" class="hidden absolute top-full left-0 right-0 mt-1 bg-surface-container-high/95 backdrop-blur-md border border-outline-variant/60 rounded-xl shadow-2xl z-30 max-h-48 overflow-y-auto"></div>
+            </div>
 
-            <!-- Secondary transit corridors (dim background paths) -->
-            <path d="M 10 120 Q 90 140 180 170 T 360 200" stroke="#27272a" stroke-width="2" stroke-linecap="round"/>
-            <path d="M 70 210 Q 150 110 240 80 T 350 20" stroke="#1e1e22" stroke-width="2" stroke-dasharray="4 4"/>
-
-            <!-- Geofence Area around Grand Central (Target: 300, 75) -->
-            <circle id="svgGeofenceGlow" cx="300" cy="75" r="48" fill="url(#geofenceGlow)"/>
-            <circle id="svgGeofenceCircle" cx="300" cy="75" r="48" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4 4" stroke-opacity="0.85"/>
-            <circle cx="300" cy="75" r="28" stroke="#7c3aed" stroke-width="1" stroke-opacity="0.4"/>
-
-            <!-- Active Transit Route Vector -->
-            <path id="routeLine" d="M 45 168 C 110 155, 185 140, 245 105 S 285 85, 300 75" stroke="url(#routeGradient)" stroke-width="4.5" stroke-linecap="round"/>
-
-            <!-- Origin Node (Stamford) -->
-            <circle cx="45" cy="168" r="4" fill="#34d399"/>
-            <text x="25" y="190" fill="#a1a1aa" font-size="10" font-family="Geist" font-weight="500" id="mapOriginLabel">Stamford</text>
-
-            <!-- Destination Station Marker (Grand Central) -->
-            <circle cx="300" cy="75" r="8" fill="#a78bfa" fill-opacity="0.3"/>
-            <circle cx="300" cy="75" r="4" fill="#fafafa"/>
-            <text x="235" y="55" fill="#fafafa" font-size="11" font-family="Geist" font-weight="700" id="mapDestLabel">Grand Central</text>
-            <text id="svgGeofenceLabel" x="260" y="66" fill="#a78bfa" font-size="9" font-family="Geist" font-weight="500">10km Fence</text>
-
-            <!-- Live Moving Train Marker -->
-            <g id="liveVehicleMarker" transform="translate(192, 133)" class="transition-transform duration-700 ease-out">
-              <circle cx="0" cy="0" r="10" fill="#34d399" fill-opacity="0.25">
-                <animate attributeName="r" values="6;14;6" dur="2.2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.8;0.2;0.8" dur="2.2s" repeatCount="indefinite" />
-              </circle>
-              <circle cx="0" cy="0" r="5" fill="#34d399"/>
-              <circle cx="0" cy="0" r="2" fill="#001a12"/>
-            </g>
-          </svg>
-
-          <!-- Map Overlay Controls -->
-          <div class="absolute top-2.5 right-2.5 flex flex-col gap-1.5 z-10">
-            <button id="toggleMapMode" aria-label="Toggle Route Animation" class="w-8 h-8 rounded-lg bg-surface-container-highest/90 text-on-surface flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-sm border border-outline-variant/40" title="Simulate Movement">
+            <button id="toggleMapMode" aria-label="Toggle Route Animation" class="w-9 h-9 rounded-xl bg-surface-container-highest/95 text-on-surface flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-md border border-outline-variant/60 flex-shrink-0" title="Simulate Movement">
               <span class="material-symbols-outlined text-[18px]" id="simPlayIcon">fast_forward</span>
             </button>
-            <button id="recenterBtn" aria-label="Recenter Track" class="w-8 h-8 rounded-lg bg-surface-container-highest/90 text-tertiary flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-sm border border-outline-variant/40" title="Recenter Location">
+            <button id="recenterBtn" aria-label="Recenter Track" class="w-9 h-9 rounded-xl bg-surface-container-highest/95 text-tertiary flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-md border border-outline-variant/60 flex-shrink-0" title="Recenter to My Location">
               <span class="material-symbols-outlined text-[18px]">my_location</span>
             </button>
+            <a id="openGoogleMapsBtn" href="https://maps.google.com" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-xl bg-surface-container-highest/95 text-primary flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-md border border-outline-variant/60 flex-shrink-0" title="Open Target in Google Maps">
+              <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+            </a>
           </div>
 
-          <!-- Live Speed HUD Tag -->
-          <div class="absolute top-2.5 left-2.5 px-2 py-1 rounded bg-surface-container-highest/85 backdrop-blur-sm flex items-center gap-1.5 shadow-sm border border-outline-variant/30">
-            <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
-            <span class="text-[11px] font-mono font-semibold text-on-surface" id="transitVehicleTag">EXPRESS RAIL 1408</span>
+          <!-- Interactive Tip Bar & Live Coordinates -->
+          <div class="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
+            <div class="flex items-center gap-1.5 bg-surface-container-highest/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-outline-variant/40 text-[10px] font-label shadow-sm">
+              <span class="material-symbols-outlined text-primary text-[13px]">touch_app</span>
+              <span class="text-on-surface font-medium">Tap map anywhere to select destination</span>
+            </div>
+            <div class="px-2 py-0.5 rounded bg-surface-container-highest/90 backdrop-blur-md flex items-center gap-1 shadow-sm border border-outline-variant/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+              <span class="text-[10px] font-mono text-tertiary" id="mapCoordsBadge">40.75°N, 73.97°W</span>
+            </div>
           </div>
         </div>
 
@@ -287,11 +253,13 @@
 
           <div class="relative bg-surface-container-lowest rounded-xl p-2.5 space-y-2 border border-outline-variant/30">
             <!-- Origin -->
-            <div class="flex items-center gap-2.5">
+            <div class="relative flex items-center gap-2.5">
               <div class="w-2.5 h-2.5 rounded-full bg-tertiary flex-shrink-0"></div>
-              <div class="flex-1 min-w-0">
-                <span class="text-[10px] font-label uppercase text-on-surface-variant block">Departing Station</span>
-                <input id="originInput" type="text" value="Stamford Metro-North" class="w-full bg-transparent text-xs font-medium text-on-surface focus:outline-none truncate"/>
+              <div class="flex-1 min-w-0 relative">
+                <span class="text-[10px] font-label uppercase text-on-surface-variant block">Departing Station / Location</span>
+                <input id="originInput" type="text" value="Stamford Station" autocomplete="off" placeholder="Search departure station..." class="w-full bg-transparent text-xs font-medium text-on-surface focus:outline-none truncate"/>
+                <!-- Autocomplete dropdown -->
+                <div id="originSuggestions" class="hidden absolute top-full left-0 right-0 mt-1 bg-surface-container-high border border-outline-variant/50 rounded-lg shadow-xl z-50 max-h-40 overflow-y-auto"></div>
               </div>
             </div>
 
@@ -304,22 +272,15 @@
             </div>
 
             <!-- Destination -->
-            <div class="flex items-center gap-2.5">
+            <div class="relative flex items-center gap-2.5">
               <div class="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0 animate-pulse"></div>
-              <div class="flex-1 min-w-0">
-                <span class="text-[10px] font-label uppercase text-primary block">Wake Target Station</span>
-                <input id="destinationInput" type="text" value="Grand Central Terminal, NY" class="w-full bg-transparent text-xs font-semibold text-on-surface focus:outline-none truncate"/>
+              <div class="flex-1 min-w-0 relative">
+                <span class="text-[10px] font-label uppercase text-primary block">Wake Target Destination</span>
+                <input id="destinationInput" type="text" value="Grand Central Terminal, NY" autocomplete="off" placeholder="Select on map or type destination..." class="w-full bg-transparent text-xs font-semibold text-on-surface focus:outline-none truncate"/>
+                <!-- Autocomplete dropdown -->
+                <div id="destSuggestions" class="hidden absolute top-full left-0 right-0 mt-1 bg-surface-container-high border border-outline-variant/50 rounded-lg shadow-xl z-50 max-h-40 overflow-y-auto"></div>
               </div>
             </div>
-          </div>
-
-          <!-- Quick Preset Chips -->
-          <div class="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar text-[11px]">
-            <span class="text-[10px] text-on-surface-variant flex-shrink-0 font-medium">Presets:</span>
-            <button class="preset-chip px-2.5 py-1 rounded bg-surface-container-highest text-primary font-medium hover:bg-surface-bright flex-shrink-0 transition-colors border border-primary/20" data-dest="Grand Central Terminal, NY">Grand Central</button>
-            <button class="preset-chip px-2.5 py-1 rounded bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-medium hover:bg-surface-bright flex-shrink-0 transition-colors border border-outline-variant/30" data-dest="Penn Station, New York">Penn Station</button>
-            <button class="preset-chip px-2.5 py-1 rounded bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-medium hover:bg-surface-bright flex-shrink-0 transition-colors border border-outline-variant/30" data-dest="Union Station, Chicago">Union Station</button>
-            <button class="preset-chip px-2.5 py-1 rounded bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-medium hover:bg-surface-bright flex-shrink-0 transition-colors border border-outline-variant/30" data-dest="JFK Airport Express">Airport Exp</button>
           </div>
         </div>
 
@@ -409,6 +370,22 @@
               <span>60 min</span>
             </div>
           </div>
+
+          <!-- Half-Distance Secondary Alarm Toggle (Optional User Choice) -->
+          <div class="pt-2 border-t border-outline-variant/30 flex items-center justify-between">
+            <div class="flex flex-col pr-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-semibold text-on-surface">Half-Distance 2nd Alarm</span>
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-label font-bold bg-primary/20 text-primary border border-primary/30">Optional</span>
+              </div>
+              <span class="text-[10px] text-on-surface-variant mt-0.5" id="halfAlarmDesc">
+                Auto re-rings alarm at 5.0 km if snoozed / unawakened
+              </span>
+            </div>
+            <button id="toggleHalfAlarmBtn" type="button" class="w-9 h-5 rounded-full bg-surface-container-highest relative transition-colors flex-shrink-0" aria-label="Toggle Half-Distance Alarm">
+              <span id="halfAlarmKnob" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-on-surface-variant transition-transform"></span>
+            </button>
+          </div>
         </div>
 
         <!-- Audio Tone & Haptic Controls -->
@@ -449,16 +426,20 @@
         <button id="startNapModeBtn" class="w-full py-4 px-4 rounded-xl bg-primary text-on-primary font-headline font-bold text-base tracking-wide shadow-lg shadow-primary/20 flex flex-col items-center justify-center transition-all duration-300 active:scale-98 hover:brightness-110">
           <div class="flex items-center gap-2">
             <span class="material-symbols-outlined text-[22px]">bedtime</span>
-            <span>Start Nap Mode</span>
+            <span id="startNapModeText">Start Nap Mode</span>
           </div>
           <span class="text-[11px] font-normal opacity-90 font-body mt-0.5" id="ctaNapSubtitle">Alarm triggers at 10.0 km (18 min safe nap)</span>
         </button>
 
-        <!-- SIMULATE ALARM DIRECT TRIGGER BUTTON -->
-        <div class="pt-1">
-          <button id="triggerTestAlarmDirect" class="w-full py-2.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-tertiary text-xs font-headline font-bold flex items-center justify-center gap-1.5 transition-colors border border-tertiary/30">
+        <!-- EMERGENCY SHARE & TEST ALARM BUTTONS -->
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button id="shareJourneyBtn" class="py-2.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-primary text-xs font-headline font-bold flex items-center justify-center gap-1.5 transition-colors border border-primary/30">
+            <span class="material-symbols-outlined text-[16px]">share_location</span>
+            <span>Share Live Trip</span>
+          </button>
+          <button id="triggerTestAlarmDirect" class="py-2.5 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-tertiary text-xs font-headline font-bold flex items-center justify-center gap-1.5 transition-colors border border-tertiary/30">
             <span class="material-symbols-outlined text-[16px]">notifications_active</span>
-            <span>Test Wake-Up Alarm Screen &amp; Math Lock</span>
+            <span>Test Alarm &amp; Math</span>
           </button>
         </div>
       </section>
@@ -485,7 +466,7 @@
         </p>
       </section>
 
-      <!-- HIGH-TECH 16:9 VIDEO PLAYER FRAME (EMPTY PORTAL / READY FOR DEMO VIDEO) -->
+      <!-- 16:9 VIDEO PLAYER FRAME -->
       <section class="flex flex-col gap-3">
         <div class="flex items-center justify-between px-1">
           <div class="flex items-center gap-1.5">
@@ -495,15 +476,13 @@
           <span class="text-[10px] font-label font-medium px-2 py-0.5 rounded-full bg-surface-container-high text-tertiary border border-tertiary/30">AI Ready</span>
         </div>
 
-        <!-- 16:9 Aspect Ratio Video Frame -->
         <div id="videoContainer" class="relative w-full aspect-video rounded-xl bg-surface-container-lowest overflow-hidden shadow-2xl select-none group border border-outline-variant/50">
-          
-          <!-- Hidden Native Video Element (plays automatically when video file is attached) -->
+          <!-- Hidden Native Video Element -->
           <video id="actualVideoPlayer" class="hidden w-full h-full object-cover relative z-10" playsinline preload="metadata">
             <source id="videoSource" src="videos/demo.mp4" type="video/mp4" />
           </video>
 
-          <!-- Sleek Radar Grid Backdrop (Visible in empty placeholder mode) -->
+          <!-- Sleek Radar Grid Backdrop -->
           <div id="placeholderCanvas" class="absolute inset-0">
             <svg class="absolute inset-0 w-full h-full opacity-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
               <defs>
@@ -528,7 +507,7 @@
               <div class="w-1 bg-tertiary h-4 rounded-full animate-pulse" style="animation-delay: 180ms;"></div>
             </div>
 
-            <!-- Empty Portal Center Action Zone -->
+            <!-- Center Action Zone -->
             <div id="playCenterZone" class="absolute inset-0 flex flex-col items-center justify-center p-4 z-10 cursor-pointer bg-gradient-to-t from-surface-container-lowest/90 via-surface-container-lowest/40 to-transparent">
               <div class="relative flex items-center justify-center mb-2">
                 <div class="absolute w-14 h-14 rounded-full bg-primary/20 animate-ping"></div>
@@ -705,7 +684,7 @@
             <span class="material-symbols-outlined text-[16px] text-tertiary">tune</span>
             <div class="flex flex-col">
               <span class="text-[9px] font-label text-secondary font-semibold uppercase tracking-wider">Recommended Setup</span>
-              <span class="text-[11px] font-label text-on-surface font-medium">Math Lock Active • 4 Tries • Shake Failsafe</span>
+              <span class="text-[11px] font-label text-on-surface font-medium">Math Lock Active • Dynamic Arithmetic • Shake Failsafe</span>
             </div>
           </div>
         </div>
@@ -768,10 +747,10 @@
               <span class="text-[11px] font-headline font-bold uppercase tracking-wider text-error">Warning: Geofence Breach</span>
               <span class="px-1.5 py-0.2 rounded text-[9px] font-label font-extrabold bg-error text-on-error">RAPID WAKE</span>
             </div>
-            <span class="text-[12px] font-label font-medium opacity-90 truncate">Approaching Terminal Rapid Deceleration</span>
+            <span class="text-[12px] font-label font-medium opacity-90 truncate" id="alarmTriggerBannerSub">Approaching Terminal Rapid Deceleration</span>
           </div>
         </div>
-        <span class="text-[11px] font-label font-semibold text-error px-2 py-0.5 rounded bg-surface-container-lowest/50 flex-shrink-0">10 KM</span>
+        <span class="text-[11px] font-label font-semibold text-error px-2 py-0.5 rounded bg-surface-container-lowest/50 flex-shrink-0" id="alarmTriggerRadiusTag">10 KM</span>
       </div>
 
       <!-- Station Target & Chrono Clock Bento -->
@@ -779,10 +758,10 @@
         <div class="flex items-start justify-between gap-2">
           <div class="flex flex-col">
             <span class="text-[11px] font-label uppercase tracking-widest text-on-surface-variant font-medium">Terminal Station</span>
-            <h1 class="text-xl font-headline font-black tracking-tight text-on-surface mt-0.5">GRAND CENTRAL TERMINAL</h1>
+            <h1 class="text-xl font-headline font-black tracking-tight text-on-surface mt-0.5" id="alarmDestTitle">GRAND CENTRAL TERMINAL</h1>
             <div class="flex items-center gap-2 mt-1">
-              <span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary text-[10px] font-label font-bold tracking-tight">Track 34 Arrival</span>
-              <span class="text-[11px] font-label text-on-surface-variant">Metro-North Hudson Line</span>
+              <span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary text-[10px] font-label font-bold tracking-tight" id="alarmPlatformTag">Target Geofence</span>
+              <span class="text-[11px] font-label text-on-surface-variant" id="alarmLineTag">Approaching Destination</span>
             </div>
           </div>
           <div class="flex flex-col items-end">
@@ -797,7 +776,7 @@
         <div class="bg-surface-container-high rounded p-2.5 flex items-center justify-between border border-outline-variant/30">
           <div class="flex items-center gap-2">
             <span class="material-symbols-outlined text-primary text-[18px]">notifications_active</span>
-            <span class="text-[11px] font-label text-on-surface font-medium">Siren Sounding (Offline Synthesizer)</span>
+            <span class="text-[11px] font-label text-on-surface font-medium" id="alarmSirenActiveLabel">Siren Sounding (Offline Synthesizer)</span>
           </div>
           <div class="flex items-center gap-1">
             <span class="w-1.5 h-3 rounded-full bg-primary animate-pulse"></span>
@@ -829,11 +808,11 @@
 
         <!-- Equation Arena -->
         <div class="bg-surface-container-lowest rounded-xl p-4 flex flex-col items-center justify-center gap-1 text-center border border-outline-variant/30">
-          <span class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">Arithmetic Verification #02</span>
+          <span class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider">Dynamic Arithmetic Verification</span>
           <div class="text-3xl font-headline font-black text-on-surface tracking-tight mt-1 flex items-center gap-2">
-            <span>18</span>
+            <span id="puzzle-num1">18</span>
             <span class="text-primary font-bold">+</span>
-            <span>14</span>
+            <span id="puzzle-num2">14</span>
             <span class="text-on-surface-variant">=</span>
             <span id="answer-preview" class="px-3 py-0.5 rounded bg-surface-container-highest text-primary font-mono text-2xl border border-primary/30">?</span>
           </div>
@@ -882,11 +861,19 @@
           <span>Solve Puzzle to Silence Alarm</span>
         </button>
 
-        <!-- Emergency Snooze (+3 Min) -->
-        <button id="snooze-alarm-btn" class="w-full py-2.5 px-4 rounded-xl font-headline font-semibold text-xs tracking-wide bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors flex items-center justify-center gap-2 shadow-sm border border-outline-variant/30">
-          <span class="material-symbols-outlined text-primary text-[17px]">snooze</span>
-          <span>Emergency Snooze (+3 Min Window)</span>
-        </button>
+        <div class="grid grid-cols-2 gap-2">
+          <!-- Option A: Standard Time Snooze (+3 Min) -->
+          <button id="snooze-alarm-btn" class="w-full py-2.5 px-3 rounded-xl font-headline font-semibold text-xs tracking-wide bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors flex items-center justify-center gap-1.5 shadow-sm border border-outline-variant/30">
+            <span class="material-symbols-outlined text-primary text-[16px]">snooze</span>
+            <span>Snooze +3 Min</span>
+          </button>
+          
+          <!-- Option B: Half-Distance Snooze (User's choice) -->
+          <button id="snooze-half-dist-btn" class="w-full py-2.5 px-3 rounded-xl font-headline font-semibold text-xs tracking-wide bg-primary/10 hover:bg-primary/20 text-primary transition-colors flex items-center justify-center gap-1.5 shadow-sm border border-primary/30">
+            <span class="material-symbols-outlined text-[16px]">radar</span>
+            <span id="snoozeHalfDistText">Ring at Half Dist</span>
+          </button>
+        </div>
       </div>
 
       <!-- Onward Transfer Chip -->
@@ -896,13 +883,13 @@
             <span class="material-symbols-outlined text-[18px]">directions_subway</span>
           </div>
           <div class="flex flex-col min-w-0">
-            <span class="text-[10px] font-label uppercase tracking-wider text-on-surface-variant font-semibold">Immediate Transfer</span>
-            <span class="text-[12px] font-headline font-bold text-on-surface truncate">Subway Line 4/5/6 Uptown Express</span>
+            <span class="text-[10px] font-label uppercase tracking-wider text-on-surface-variant font-semibold">Arrival Status</span>
+            <span class="text-[12px] font-headline font-bold text-on-surface truncate" id="alarmArrivalSubtitle">Prepare belongings for platform arrival</span>
           </div>
         </div>
         <div class="flex flex-col items-end flex-shrink-0">
-          <span class="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-label text-[10px] font-bold">In 8 Mins</span>
-          <span class="text-[9px] font-label text-on-surface-variant mt-0.5">Platform B3</span>
+          <span class="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-label text-[10px] font-bold">On Schedule</span>
+          <span class="text-[9px] font-label text-on-surface-variant mt-0.5">Track Ready</span>
         </div>
       </div>
     </div>
@@ -924,9 +911,9 @@
             </div>
             <div class="flex flex-col">
               <div class="flex items-baseline gap-1.5">
-                <span class="text-2xl font-headline font-bold text-on-surface tracking-tight">48</span>
+                <span class="text-2xl font-headline font-bold text-on-surface tracking-tight" id="statTotalNaps">48</span>
                 <span class="text-xs font-label text-tertiary font-semibold flex items-center gap-0.5">
-                  <span class="material-symbols-outlined text-[13px]">verified</span>100% on-time
+                  <span class="material-symbols-outlined text-[13px]">verified</span><span id="statOnTimePct">100%</span> on-time
                 </span>
               </div>
               <span class="text-xs text-on-surface-variant font-medium">Safe Transit Naps • 0 Missed Stops</span>
@@ -944,9 +931,9 @@
             <span class="material-symbols-outlined text-[17px] text-primary">bedtime</span>
           </div>
           <div class="my-2">
-            <div class="text-xl font-headline font-bold text-on-surface tracking-tight">34h 15m</div>
+            <div class="text-xl font-headline font-bold text-on-surface tracking-tight" id="statSleepTime">34h 15m</div>
             <div class="text-[10px] text-tertiary font-medium flex items-center gap-0.5 mt-0.5">
-              <span class="material-symbols-outlined text-[12px]">trending_up</span>+4.2h this month
+              <span class="material-symbols-outlined text-[12px]">trending_up</span>Total restful commute
             </div>
           </div>
           <div class="w-full h-5 flex items-end">
@@ -964,7 +951,7 @@
             <span class="material-symbols-outlined text-[17px] text-tertiary">timer</span>
           </div>
           <div class="my-2">
-            <div class="text-xl font-headline font-bold text-on-surface tracking-tight">8.4 <span class="text-xs font-normal text-on-surface-variant">min</span></div>
+            <div class="text-xl font-headline font-bold text-on-surface tracking-tight" id="statAvgBuffer">8.4 <span class="text-xs font-normal text-on-surface-variant">min</span></div>
             <div class="text-[10px] text-on-surface-variant font-medium mt-0.5">Pre-station arrival buffer</div>
           </div>
           <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
@@ -973,81 +960,16 @@
         </div>
       </section>
 
-      <!-- Saved Transit Presets -->
+
+
+      <!-- Recent Completed Sessions List -->
       <section class="space-y-2">
         <div class="flex items-center justify-between px-0.5">
-          <h2 class="text-xs font-headline font-bold uppercase tracking-wider text-on-surface-variant">Saved Commute Routes</h2>
-          <span class="text-[11px] font-label text-primary font-medium">3 Active</span>
+          <h2 class="text-xs font-headline font-bold uppercase tracking-wider text-on-surface-variant">Recent Nap Logs</h2>
+          <span class="text-[11px] font-label text-tertiary font-medium" id="recentSessionsCount">3 Logs</span>
         </div>
-
-        <!-- Preset 1 -->
-        <div class="bg-surface-container rounded-xl p-3 shadow-sm border border-outline-variant/30 hover:bg-surface-container-high transition-colors">
-          <div class="flex items-start justify-between gap-2">
-            <div class="flex items-start gap-2.5 min-w-0">
-              <div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary flex-shrink-0 mt-0.5 border border-primary/20">
-                <span class="material-symbols-outlined text-[20px]">train</span>
-              </div>
-              <div class="flex flex-col min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-xs font-headline font-semibold text-on-surface truncate">Grand Central → Stamford</span>
-                  <span class="px-1.5 py-0.2 rounded text-[9px] font-label bg-surface-container-highest text-on-surface-variant">Express</span>
-                </div>
-                <span class="text-[11px] text-on-surface-variant font-medium mt-0.5">Evening Commute Home</span>
-                <div class="flex items-center gap-2 mt-1.5 text-[10px] text-on-surface-variant">
-                  <span class="flex items-center gap-0.5 text-primary">
-                    <span class="material-symbols-outlined text-[13px]">radar</span>10 km trigger
-                  </span>
-                  <span>•</span>
-                  <span class="flex items-center gap-0.5">
-                    <span class="material-symbols-outlined text-[13px]">volume_up</span>Chime + Siren
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="mt-3 pt-2.5 flex items-center justify-between bg-surface-container-low px-2.5 py-1.5 rounded-lg border border-outline-variant/20">
-            <span class="text-[11px] font-label text-on-surface-variant flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>Ready to engage
-            </span>
-            <button class="launch-preset-btn px-3 py-1 rounded bg-primary text-on-primary text-xs font-headline font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-transform" data-origin="Grand Central, NY" data-dest="Stamford Metro-North">
-              <span class="material-symbols-outlined text-[14px]">bedtime</span>One-Tap Nap
-            </button>
-          </div>
-        </div>
-
-        <!-- Preset 2 -->
-        <div class="bg-surface-container rounded-xl p-3 shadow-sm border border-outline-variant/30 hover:bg-surface-container-high transition-colors">
-          <div class="flex items-start justify-between gap-2">
-            <div class="flex items-start gap-2.5 min-w-0">
-              <div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary flex-shrink-0 mt-0.5 border border-tertiary/20">
-                <span class="material-symbols-outlined text-[20px]">subway</span>
-              </div>
-              <div class="flex flex-col min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-xs font-headline font-semibold text-on-surface truncate">86th St → Wall St</span>
-                  <span class="px-1.5 py-0.2 rounded text-[9px] font-label bg-surface-container-highest text-on-surface-variant">4/5 Line</span>
-                </div>
-                <span class="text-[11px] text-on-surface-variant font-medium mt-0.5">Morning Metro Quick-Powernap</span>
-                <div class="flex items-center gap-2 mt-1.5 text-[10px] text-on-surface-variant">
-                  <span class="flex items-center gap-0.5 text-primary">
-                    <span class="material-symbols-outlined text-[13px]">radar</span>1.5 km trigger
-                  </span>
-                  <span>•</span>
-                  <span class="flex items-center gap-0.5">
-                    <span class="material-symbols-outlined text-[13px]">vibration</span>Haptic Only
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="mt-3 pt-2.5 flex items-center justify-between bg-surface-container-low px-2.5 py-1.5 rounded-lg border border-outline-variant/20">
-            <span class="text-[11px] font-label text-on-surface-variant flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>Silent Wake Mode
-            </span>
-            <button class="launch-preset-btn px-3 py-1 rounded bg-primary text-on-primary text-xs font-headline font-bold flex items-center gap-1 shadow-sm active:scale-95 transition-transform" data-origin="86th St Subway" data-dest="Wall St Metro">
-              <span class="material-symbols-outlined text-[14px]">bedtime</span>One-Tap Nap
-            </button>
-          </div>
+        <div id="recentSessionsContainer" class="space-y-2">
+          <!-- Dynamically populated from local storage & backend -->
         </div>
       </section>
     </div>
@@ -1103,8 +1025,32 @@
         wakeLockSentinel: null,
         batterySaver: false,
         cognitiveSolved: false,
-        shakeCount: 0
+        puzzleNum1: 18,
+        puzzleNum2: 14,
+        puzzleAnswer: 32,
+        shakeCount: 0,
+        halfDistanceAlarmEnabled: false,
+        isSecondaryAlarmArmed: false,
+        secondaryTriggerDistance: 5.0,
+        hasSecondaryAlarmFired: false,
+        gpsWatchId: null,
+        isGpsTrackingActive: false,
+        destLat: 40.7527,
+        destLng: -73.9772,
+        userLat: 41.0469,
+        userLng: -73.5425
       };
+
+      // Built-in Station Database Fallback
+      const STATIONS_CACHE = [
+        { id: "gct", name: "Grand Central Terminal, NY", city: "New York, NY", lat: 40.7527, lng: -73.9772, defaultRadiusKm: 10.0 },
+        { id: "stamford", name: "Stamford Station", city: "Stamford, CT", lat: 41.0469, lng: -73.5425, defaultRadiusKm: 8.0 },
+        { id: "penn", name: "Penn Station, New York", city: "New York, NY", lat: 40.7505, lng: -73.9934, defaultRadiusKm: 10.0 },
+        { id: "union_chi", name: "Union Station, Chicago", city: "Chicago, IL", lat: 41.8787, lng: -87.6403, defaultRadiusKm: 12.0 },
+        { id: "jfk_exp", name: "JFK Airport Central Terminal", city: "Queens, NY", lat: 40.6413, lng: -73.7781, defaultRadiusKm: 15.0 },
+        { id: "wall_st", name: "Wall Street Metro", city: "New York, NY", lat: 40.7069, lng: -74.0094, defaultRadiusKm: 1.5 },
+        { id: "86th_st", name: "86th St Subway", city: "New York, NY", lat: 40.7795, lng: -73.9556, defaultRadiusKm: 1.5 }
+      ];
 
       // --- WEB AUDIO API SYNTHESIZER ---
       let audioCtx = null;
@@ -1115,18 +1061,29 @@
 
       function getAudioContext() {
         if (!audioCtx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          audioCtx = new AudioContext();
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+          }
         }
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
         }
         return audioCtx;
       }
 
+      // Proactive unlock on user interaction
+      function unlockAudioGesture() {
+        getAudioContext();
+      }
+      window.addEventListener('click', unlockAudioGesture, { passive: true });
+      window.addEventListener('touchstart', unlockAudioGesture, { passive: true });
+
       function startSynthesizer(toneType) {
         stopSynthesizer();
         const ctx = getAudioContext();
+        if (!ctx) return;
+
         sirenGain = ctx.createGain();
         sirenGain.gain.setValueAtTime(0.3, ctx.currentTime);
         sirenGain.connect(ctx.destination);
@@ -1136,12 +1093,12 @@
           sirenOsc1 = ctx.createOscillator();
           sirenOsc1.type = 'sawtooth';
           sirenOsc1.connect(sirenGain);
-          sirenOsc1.start();
+          try { sirenOsc1.start(); } catch(e) {}
 
           let freq = 600;
           let goingUp = true;
           sirenTimer = setInterval(() => {
-            if (!sirenOsc1) return;
+            if (!sirenOsc1 || !ctx) return;
             if (goingUp) {
               freq += 35;
               if (freq >= 1100) goingUp = false;
@@ -1149,7 +1106,7 @@
               freq -= 35;
               if (freq <= 500) goingUp = true;
             }
-            sirenOsc1.frequency.setValueAtTime(freq, ctx.currentTime);
+            try { sirenOsc1.frequency.setValueAtTime(freq, ctx.currentTime); } catch(e) {}
           }, 35);
 
         } else if (toneType === 'train') {
@@ -1162,8 +1119,10 @@
           sirenOsc2.frequency.setValueAtTime(466.16, ctx.currentTime); // A#4
           sirenOsc1.connect(sirenGain);
           sirenOsc2.connect(sirenGain);
-          sirenOsc1.start();
-          sirenOsc2.start();
+          try {
+            sirenOsc1.start();
+            sirenOsc2.start();
+          } catch(e) {}
 
         } else {
           // Gentle ambient chime (sine wave ping)
@@ -1171,12 +1130,14 @@
           sirenOsc1.type = 'sine';
           sirenOsc1.frequency.setValueAtTime(880, ctx.currentTime);
           sirenOsc1.connect(sirenGain);
-          sirenOsc1.start();
+          try { sirenOsc1.start(); } catch(e) {}
 
           sirenTimer = setInterval(() => {
-            if (!sirenOsc1) return;
-            sirenGain.gain.setValueAtTime(0.35, ctx.currentTime);
-            sirenGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+            if (!sirenOsc1 || !ctx || !sirenGain) return;
+            try {
+              sirenGain.gain.setValueAtTime(0.35, ctx.currentTime);
+              sirenGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+            } catch(e) {}
           }, 1000);
         }
 
@@ -1243,8 +1204,10 @@
         });
       });
 
-      // Quick links from other tabs
+      // Quick trigger alarm test from Transit HUD
       document.getElementById('triggerTestAlarmDirect').addEventListener('click', () => {
+        initOrResetCognitivePuzzle();
+        startAlarmCountdown(252);
         switchTab('tab-alarm-trigger', 'Alarm Trigger');
         startSynthesizer(state.soundTone);
       });
@@ -1253,6 +1216,7 @@
       const wakeLockBtn = document.getElementById('wakeLockBtn');
       const wakeLockIcon = document.getElementById('wakeLockIcon');
       const wakeLockLabel = document.getElementById('wakeLockLabel');
+      const statusWakeLockText = document.getElementById('statusWakeLockText');
 
       async function requestWakeLock() {
         if ('wakeLock' in navigator) {
@@ -1260,9 +1224,11 @@
             state.wakeLockSentinel = await navigator.wakeLock.request('screen');
             wakeLockIcon.textContent = 'bolt';
             wakeLockLabel.textContent = 'Awake';
+            if (statusWakeLockText) statusWakeLockText.textContent = 'Active';
             wakeLockBtn.classList.replace('opacity-50', 'opacity-100');
             state.wakeLockSentinel.addEventListener('release', () => {
               state.wakeLockSentinel = null;
+              if (statusWakeLockText) statusWakeLockText.textContent = 'Standby';
             });
           } catch(err) {
             console.log('Wake Lock Request Error:', err);
@@ -1277,6 +1243,7 @@
             state.wakeLockSentinel = null;
             wakeLockIcon.textContent = 'lock_open';
             wakeLockLabel.textContent = 'Sleep OK';
+            if (statusWakeLockText) statusWakeLockText.textContent = 'Sleep OK';
             wakeLockBtn.classList.add('opacity-50');
           } catch(err) {}
         }
@@ -1293,17 +1260,17 @@
 
       // Re-acquire Wake Lock automatically if user minimizes and returns
       document.addEventListener('visibilitychange', async () => {
-        if (state.wakeLockSentinel !== null && document.visibilityState === 'visible') {
+        if (state.napActive && document.visibilityState === 'visible') {
           await requestWakeLock();
         }
       });
 
       // Silent Audio Loop Keepalive (Pocket Mode)
-      // Keeps iOS/Android background thread active when screen turns off
       let keepaliveOsc = null;
       function startSilentKeepalive() {
         try {
           const ctx = getAudioContext();
+          if (!ctx) return;
           const silentGain = ctx.createGain();
           silentGain.gain.setValueAtTime(0.0001, ctx.currentTime); // Inaudible
           keepaliveOsc = ctx.createOscillator();
@@ -1339,45 +1306,84 @@
         }
       });
 
-      // --- ROUTE SWAP & PRESETS ---
+      // --- ROUTE SWAP & AUTOCOMPLETE SEARCH ---
       const originInput = document.getElementById('originInput');
       const destinationInput = document.getElementById('destinationInput');
+      const originSuggestions = document.getElementById('originSuggestions');
+      const destSuggestions = document.getElementById('destSuggestions');
       const swapRouteBtn = document.getElementById('swapRouteBtn');
       const mapOriginLabel = document.getElementById('mapOriginLabel');
       const mapDestLabel = document.getElementById('mapDestLabel');
+      const alarmDestTitle = document.getElementById('alarmDestTitle');
+
+      function updateStationLabels() {
+        if (originInput && mapOriginLabel) {
+          mapOriginLabel.textContent = originInput.value.split(',')[0].slice(0, 10);
+        }
+        if (destinationInput && mapDestLabel) {
+          const destShort = destinationInput.value.split(',')[0].slice(0, 13);
+          mapDestLabel.textContent = destShort;
+          if (alarmDestTitle) alarmDestTitle.textContent = destinationInput.value.toUpperCase();
+        }
+      }
 
       swapRouteBtn.addEventListener('click', () => {
         const temp = originInput.value;
         originInput.value = destinationInput.value;
         destinationInput.value = temp;
-        mapOriginLabel.textContent = originInput.value.split(',')[0].slice(0, 10);
-        mapDestLabel.textContent = destinationInput.value.split(',')[0].slice(0, 13);
+        updateStationLabels();
       });
 
-      document.querySelectorAll('.preset-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          destinationInput.value = chip.getAttribute('data-dest');
-          mapDestLabel.textContent = chip.textContent;
-          document.querySelectorAll('.preset-chip').forEach(c => {
-            c.classList.remove('text-primary', 'border-primary/20');
-            c.classList.add('text-on-surface-variant', 'border-outline-variant/30');
-          });
-          chip.classList.add('text-primary', 'border-primary/20');
-          chip.classList.remove('text-on-surface-variant');
+      function setupAutocomplete(inputElem, suggestionsElem) {
+        inputElem.addEventListener('input', () => {
+          const val = inputElem.value.trim().toLowerCase();
+          if (!val) {
+            suggestionsElem.classList.add('hidden');
+            return;
+          }
+          const matches = STATIONS_CACHE.filter(s => s.name.toLowerCase().includes(val) || s.city.toLowerCase().includes(val));
+          if (matches.length === 0) {
+            suggestionsElem.classList.add('hidden');
+            return;
+          }
+          suggestionsElem.innerHTML = matches.map(s => `
+            <div class="px-3 py-2 text-xs hover:bg-surface-bright cursor-pointer border-b border-outline-variant/20 flex flex-col" data-name="${s.name}" data-radius="${s.defaultRadiusKm || 10}">
+              <span class="font-semibold text-on-surface">${s.name}</span>
+              <span class="text-[10px] text-on-surface-variant">${s.city}</span>
+            </div>
+          `).join('');
+          suggestionsElem.classList.remove('hidden');
         });
-      });
 
-      // Launch presets from History tab
-      document.querySelectorAll('.launch-preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          originInput.value = btn.getAttribute('data-origin');
-          destinationInput.value = btn.getAttribute('data-dest');
-          mapOriginLabel.textContent = originInput.value.split(',')[0].slice(0, 10);
-          mapDestLabel.textContent = destinationInput.value.split(',')[0].slice(0, 13);
-          switchTab('tab-transit-hud', 'Transit HUD');
-          triggerNapMode();
+        suggestionsElem.addEventListener('click', (e) => {
+          const item = e.target.closest('[data-name]');
+          if (item) {
+            inputElem.value = item.getAttribute('data-name');
+            const rad = parseFloat(item.getAttribute('data-radius'));
+            if (inputElem === destinationInput && rad) {
+              state.geofenceRadius = rad;
+              geofenceSlider.value = rad;
+              sliderValueDisplay.textContent = rad.toFixed(1);
+              svgGeofenceLabel.textContent = `${rad.toFixed(0)}km Fence`;
+            }
+            suggestionsElem.classList.add('hidden');
+            updateStationLabels();
+            recalculateNapWindow();
+            savePreferencesToDevice();
+          }
         });
-      });
+
+        document.addEventListener('click', (e) => {
+          if (!inputElem.contains(e.target) && !suggestionsElem.contains(e.target)) {
+            suggestionsElem.classList.add('hidden');
+          }
+        });
+      }
+
+      setupAutocomplete(originInput, originSuggestions);
+      setupAutocomplete(destinationInput, destSuggestions);
+
+
 
       // --- VEHICLE PROFILES ---
       const vehiclePills = document.querySelectorAll('.vehicle-pill');
@@ -1412,6 +1418,7 @@
             vehicleProfileModel.textContent = 'Model: Arterial Traffic';
           }
           recalculateNapWindow();
+          savePreferencesToDevice();
         });
       });
 
@@ -1428,6 +1435,7 @@
       const svgGeofenceGlow = document.getElementById('svgGeofenceGlow');
       const svgGeofenceLabel = document.getElementById('svgGeofenceLabel');
       const ctaNapSubtitle = document.getElementById('ctaNapSubtitle');
+      const alarmTriggerRadiusTag = document.getElementById('alarmTriggerRadiusTag');
 
       modeDistanceTab.addEventListener('click', () => {
         state.mode = 'distance';
@@ -1454,12 +1462,14 @@
       geofenceSlider.addEventListener('input', (e) => {
         state.geofenceRadius = parseFloat(e.target.value);
         sliderValueDisplay.textContent = state.geofenceRadius.toFixed(1);
-        svgGeofenceLabel.textContent = `${state.geofenceRadius.toFixed(0)}km Fence`;
+        if (svgGeofenceLabel) svgGeofenceLabel.textContent = `${state.geofenceRadius.toFixed(0)}km Fence`;
+        if (alarmTriggerRadiusTag) alarmTriggerRadiusTag.textContent = `${state.geofenceRadius.toFixed(0)} KM`;
 
         // Scale SVG radius visually (between 20px and 70px)
         const visualR = 20 + (state.geofenceRadius / 45) * 50;
-        svgGeofenceCircle.setAttribute('r', visualR);
-        svgGeofenceGlow.setAttribute('r', visualR);
+        if (svgGeofenceCircle) svgGeofenceCircle.setAttribute('r', visualR);
+        if (svgGeofenceGlow) svgGeofenceGlow.setAttribute('r', visualR);
+        updateMapGeofenceRadius(state.geofenceRadius);
         recalculateNapWindow();
       });
 
@@ -1468,6 +1478,43 @@
         etaValueDisplay.textContent = state.etaMinutes;
         recalculateNapWindow();
       });
+
+      const toggleHalfAlarmBtn = document.getElementById('toggleHalfAlarmBtn');
+      const halfAlarmKnob = document.getElementById('halfAlarmKnob');
+      const halfAlarmDesc = document.getElementById('halfAlarmDesc');
+      const snoozeHalfDistText = document.getElementById('snoozeHalfDistText');
+
+      function updateHalfAlarmUI() {
+        const halfDist = (state.geofenceRadius / 2).toFixed(1);
+        state.secondaryTriggerDistance = state.geofenceRadius / 2;
+        if (halfAlarmDesc) {
+          halfAlarmDesc.textContent = state.halfDistanceAlarmEnabled
+            ? `Active: Secondary alarm will re-ring at ${halfDist} km if snoozed.`
+            : `Optional: Auto re-rings alarm at ${halfDist} km if snoozed / unawakened.`;
+        }
+        if (snoozeHalfDistText) {
+          snoozeHalfDistText.textContent = `Snooze to ${halfDist} km`;
+        }
+      }
+
+      if (toggleHalfAlarmBtn) {
+        toggleHalfAlarmBtn.addEventListener('click', () => {
+          state.halfDistanceAlarmEnabled = !state.halfDistanceAlarmEnabled;
+          if (state.halfDistanceAlarmEnabled) {
+            toggleHalfAlarmBtn.classList.replace('bg-surface-container-highest', 'bg-primary');
+            halfAlarmKnob.classList.replace('bg-on-surface-variant', 'bg-on-primary');
+            halfAlarmKnob.classList.add('translate-x-4');
+            state.isSecondaryAlarmArmed = true;
+          } else {
+            toggleHalfAlarmBtn.classList.replace('bg-primary', 'bg-surface-container-highest');
+            halfAlarmKnob.classList.replace('bg-on-primary', 'bg-on-surface-variant');
+            halfAlarmKnob.classList.remove('translate-x-4');
+            state.isSecondaryAlarmArmed = false;
+          }
+          updateHalfAlarmUI();
+          savePreferencesToDevice();
+        });
+      }
 
       function recalculateNapWindow() {
         const speed = state.speed || 80;
@@ -1484,7 +1531,9 @@
           ctaNapSubtitle.textContent = `Alarm triggers ${state.etaMinutes} mins before arrival (${safeWindowMin} min safe nap)`;
         }
 
-        document.getElementById('hudNapTime').textContent = Math.max(1, safeWindowMin);
+        const hudNapTime = document.getElementById('hudNapTime');
+        if (hudNapTime) hudNapTime.textContent = Math.max(1, safeWindowMin);
+        updateHalfAlarmUI();
       }
 
       // --- AUDIO & HAPTIC CONTROLS ---
@@ -1546,36 +1595,82 @@
 
       // --- START NAP MODE ACTION ---
       const startNapModeBtn = document.getElementById('startNapModeBtn');
+      const startNapModeText = document.getElementById('startNapModeText');
 
       function triggerNapMode() {
         state.napActive = true;
-        const originalContent = startNapModeBtn.innerHTML;
-        startNapModeBtn.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-[20px] animate-spin">sync</span>
-            <span class="text-base tracking-normal">Tracking Engaged...</span>
-          </div>
-          <span class="text-[11px] font-normal opacity-90 font-body mt-0.5">Sweet dreams. We'll wake you on time.</span>
-        `;
+        startNapModeText.textContent = 'Tracking Engaged...';
         startNapModeBtn.classList.replace('bg-primary', 'bg-tertiary');
         startNapModeBtn.classList.replace('text-on-primary', 'text-on-tertiary');
 
-        // Request screen wake lock & start silent audio keepalive for pocket mode
+        // Request live location on-demand per trip (prompts user permission explicitly)
+        startLiveGpsTracking();
+
         requestWakeLock();
         startSilentKeepalive();
 
         setTimeout(() => {
-          startNapModeBtn.innerHTML = originalContent;
+          startNapModeText.textContent = 'Nap Active (Tap to Stop)';
+          recalculateNapWindow();
+        }, 1500);
+      }
+
+      startNapModeBtn.addEventListener('click', () => {
+        if (state.napActive) {
+          state.napActive = false;
+          startNapModeText.textContent = 'Start Nap Mode';
           startNapModeBtn.classList.replace('bg-tertiary', 'bg-primary');
           startNapModeBtn.classList.replace('text-on-tertiary', 'text-on-primary');
-          recalculateNapWindow();
-        }, 3000);
-      }
-      startNapModeBtn.addEventListener('click', triggerNapMode);
+          
+          // Turn off live GPS immediately when nap mode is stopped
+          stopLiveGpsTracking();
+          releaseWakeLock();
+          stopSilentKeepalive();
+        } else {
+          triggerNapMode();
+        }
+      });
+
+      // --- EMERGENCY LIVE JOURNEY SHARING ---
+      const shareJourneyBtn = document.getElementById('shareJourneyBtn');
+      shareJourneyBtn.addEventListener('click', async () => {
+        const origin = originInput.value || 'Current Station';
+        const dest = destinationInput.value || 'Destination';
+        const speed = state.speed || 80;
+        const eta = Math.round((state.distanceLeft / speed) * 60);
+        
+        const shareText = `🚆 DestiWake Live Commute: Travelling from ${origin} to ${dest}. Currently ${state.distanceLeft.toFixed(1)} km away (~${eta} mins left). Wake alarm active!`;
+        
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: 'DestiWake Commute Share',
+              text: shareText,
+              url: window.location.href
+            });
+            return;
+          } catch(e) {}
+        }
+
+        // Fallback: Copy to clipboard or WhatsApp Web
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(shareText);
+          alert('✅ Live trip status copied to clipboard! You can paste it in WhatsApp / SMS.');
+        } else {
+          prompt('Copy trip update to share with family:', shareText);
+        }
+
+        // Also ping backend share API
+        try {
+          await fetch(`${API_BASE}/api/share/live`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ origin, destination: dest, distanceLeftKm: state.distanceLeft, etaMinutes: eta })
+          });
+        } catch(e) {}
+      });
 
       // --- DEAD-RECKONING & TUNNEL VECTOR EXTRAPOLATION ENGINE ---
-      // If GPS satellite connection drops in a tunnel or subway, the app extrapolates
-      // user coordinates based on the last smoothed velocity vector so the alarm still fires on time.
       let lastGpsTimestamp = Date.now();
       let lastKnownSpeed = 86; // km/h
       let drInterval = null;
@@ -1608,12 +1703,22 @@
             const distanceCoveredIn1s = speedKmh / 3600; // km
             state.distanceLeft = Math.max(0, state.distanceLeft - distanceCoveredIn1s);
 
-            document.getElementById('hudDistance').textContent = state.distanceLeft.toFixed(1);
+            const hudDistance = document.getElementById('hudDistance');
+            if (hudDistance) hudDistance.textContent = state.distanceLeft.toFixed(1);
             recalculateNapWindow();
 
-            // CRITICAL: Trigger alarm on time even in complete darkness / tunnel!
-            if (state.distanceLeft <= state.geofenceRadius && !state.alarmSounding) {
+            // Trigger alarm on time even in tunnel!
+            const isFirstTrigger = state.distanceLeft <= state.geofenceRadius && !state.alarmSounding && !state.hasSecondaryAlarmFired;
+            const isSecondaryTrigger = state.isSecondaryAlarmArmed && state.distanceLeft <= state.secondaryTriggerDistance && !state.alarmSounding;
+
+            if (isFirstTrigger || isSecondaryTrigger) {
+              if (isSecondaryTrigger) {
+                state.isSecondaryAlarmArmed = false;
+                state.hasSecondaryAlarmFired = true;
+              }
               state.alarmSounding = true;
+              initOrResetCognitivePuzzle();
+              startAlarmCountdown(Math.round((state.distanceLeft / speedKmh) * 3600));
               switchTab('tab-alarm-trigger', 'Alarm Trigger');
               startSynthesizer(state.soundTone);
             }
@@ -1621,53 +1726,326 @@
         }, 1000);
       }
 
-      // Real Geolocation Position Receiver with Signal Restoration
-      if ('geolocation' in navigator) {
-        navigator.geolocation.watchPosition(
+      // --- ON-DEMAND LIVE GPS ENGINE (USER PERMISSION REQUIRED EVERY TRIP) ---
+      function startLiveGpsTracking() {
+        if (!('geolocation' in navigator)) {
+          alert('GPS Geolocation is not supported by this browser.');
+          return;
+        }
+
+        stopLiveGpsTracking();
+
+        const gpsDot = document.getElementById('gpsIndicatorDot');
+        const gpsText = document.getElementById('gpsIndicatorText');
+        if (gpsDot && gpsText) {
+          gpsDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping';
+          gpsText.textContent = 'Requesting GPS...';
+          gpsText.className = 'text-[10px] font-label font-bold text-amber-400 tracking-tight';
+        }
+
+        state.gpsWatchId = navigator.geolocation.watchPosition(
           (pos) => {
+            state.isGpsTrackingActive = true;
             lastGpsTimestamp = Date.now();
-            if (isTunnelExtrapolating) {
-              isTunnelExtrapolating = false;
-              const gpsDot = document.getElementById('gpsIndicatorDot');
-              const gpsText = document.getElementById('gpsIndicatorText');
-              if (gpsDot && gpsText) {
-                gpsDot.className = 'w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse';
-                gpsText.textContent = '±4m GPS';
-                gpsText.className = 'text-[10px] font-label font-medium text-tertiary tracking-tight';
-              }
+
+            if (gpsDot && gpsText) {
+              gpsDot.className = 'w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse';
+              const acc = pos.coords.accuracy ? `±${Math.round(pos.coords.accuracy)}m GPS` : 'Live GPS';
+              gpsText.textContent = acc;
+              gpsText.className = 'text-[10px] font-label font-medium text-tertiary tracking-tight';
             }
-            if (pos.coords.speed) {
-              // Convert m/s to km/h and apply Exponential Moving Average smoothing
+
+            if (pos.coords && pos.coords.speed !== null && pos.coords.speed !== undefined && !isNaN(pos.coords.speed)) {
               const rawKmh = pos.coords.speed * 3.6;
-              lastKnownSpeed = Math.round(0.3 * rawKmh + 0.7 * lastKnownSpeed);
-              state.speed = lastKnownSpeed;
-              document.getElementById('hudSpeed').textContent = state.speed;
+              if (rawKmh > 3) {
+                lastKnownSpeed = Math.round(0.3 * rawKmh + 0.7 * lastKnownSpeed);
+                state.speed = lastKnownSpeed;
+                const hudSpeed = document.getElementById('hudSpeed');
+                if (hudSpeed) hudSpeed.textContent = state.speed;
+              }
             }
           },
           (err) => {
-            console.log('GPS satellite signal unavailable (tunnel/indoor): Dead-Reckoning active.', err.message);
+            console.warn('GPS permission denied or signal unavailable:', err.message);
+            if (gpsDot && gpsText) {
+              gpsDot.className = 'w-1.5 h-1.5 rounded-full bg-red-400';
+              gpsText.textContent = 'GPS Off / Denied';
+              gpsText.className = 'text-[10px] font-label font-medium text-red-400 tracking-tight';
+            }
           },
-          { enableHighAccuracy: true, maximumAge: 5000, timeout: 12000 }
+          { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
         );
+      }
+
+      function stopLiveGpsTracking() {
+        if (state.gpsWatchId !== null && 'geolocation' in navigator) {
+          navigator.geolocation.clearWatch(state.gpsWatchId);
+          state.gpsWatchId = null;
+        }
+        state.isGpsTrackingActive = false;
+
+        const gpsDot = document.getElementById('gpsIndicatorDot');
+        const gpsText = document.getElementById('gpsIndicatorText');
+        if (gpsDot && gpsText) {
+          gpsDot.className = 'w-1.5 h-1.5 rounded-full bg-zinc-500';
+          gpsText.textContent = 'GPS Idle';
+          gpsText.className = 'text-[10px] font-label font-medium text-zinc-400 tracking-tight';
+        }
+      }
+
+      // Auto turn off live GPS when user closes or navigates away from app
+      window.addEventListener('beforeunload', stopLiveGpsTracking);
+      window.addEventListener('pagehide', stopLiveGpsTracking);
+
+      // --- LEAFLET MAP & SATELLITE/TILES ENGINE ---
+      let leafletMap = null;
+      let userMarker = null;
+      let destMarker = null;
+      let geofenceCircle = null;
+      let routePolyline = null;
+
+      function updateGoogleMapsLink(lat, lng) {
+        const btn = document.getElementById('openGoogleMapsBtn');
+        if (btn) {
+          btn.href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        }
+      }
+
+      function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Earth radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+      }
+
+      function initLeafletMap() {
+        if (leafletMap || typeof L === 'undefined') return;
+        const mapContainer = document.getElementById('liveLeafletMap');
+        if (!mapContainer) return;
+
+        // Custom styled icons using SVG HTML
+        const userIcon = L.divIcon({
+          className: 'custom-user-pin',
+          html: `<div style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:rgba(52,211,153,0.25);border:2px solid #34d399;box-shadow:0 0 12px rgba(52,211,153,0.6);"><div style="width:10px;height:10px;border-radius:50%;background:#34d399;"></div></div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        const destIcon = L.divIcon({
+          className: 'custom-dest-pin',
+          html: `<div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:rgba(167,139,250,0.3);border:2px solid #a78bfa;box-shadow:0 0 14px rgba(167,139,250,0.8);"><span class="material-symbols-outlined" style="font-size:18px;color:#c4b5fd;">flag</span></div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        // Initialize map centered between Stamford and NYC
+        leafletMap = L.map('liveLeafletMap', {
+          zoomControl: false,
+          attributionControl: false
+        }).setView([state.userLat, state.userLng], 10);
+
+        // Dark-mode styled OpenStreetMap tiles (CartoDB Dark Matter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19,
+          subdomains: 'abcd'
+        }).addTo(leafletMap);
+
+        // Markers & Geofence
+        userMarker = L.marker([state.userLat, state.userLng], { icon: userIcon }).addTo(leafletMap);
+        userMarker.bindPopup('<b>Current Position</b><br>Tracking Active');
+
+        destMarker = L.marker([state.destLat, state.destLng], { icon: destIcon }).addTo(leafletMap);
+        destMarker.bindPopup('<b>Wake Target Station</b><br>Alarm Geofence Armed');
+
+        geofenceCircle = L.circle([state.destLat, state.destLng], {
+          radius: state.geofenceRadius * 1000,
+          color: '#a78bfa',
+          fillColor: '#8b5cf6',
+          fillOpacity: 0.15,
+          weight: 2,
+          dashArray: '4, 4'
+        }).addTo(leafletMap);
+
+        routePolyline = L.polyline([
+          [state.userLat, state.userLng],
+          [state.destLat, state.destLng]
+        ], {
+          color: '#34d399',
+          weight: 2,
+          opacity: 0.6,
+          dashArray: '6, 6'
+        }).addTo(leafletMap);
+
+        updateGoogleMapsLink(state.destLat, state.destLng);
+
+        // Map Click Listener: tap anywhere to select wake target destination
+        leafletMap.on('click', (e) => {
+          const { lat, lng } = e.latlng;
+          setMapDestination(lat, lng, `Selected Pin (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+        });
+
+        // Initialize Search Bar
+        initMapDestinationSearch();
+      }
+
+      function setMapDestination(lat, lng, labelText) {
+        state.destLat = lat;
+        state.destLng = lng;
+
+        if (destMarker) destMarker.setLatLng([lat, lng]);
+        if (geofenceCircle) geofenceCircle.setLatLng([lat, lng]);
+        if (routePolyline) routePolyline.setLatLngs([[state.userLat, state.userLng], [lat, lng]]);
+
+        destinationInput.value = labelText || `Target (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+        const mapSearchInput = document.getElementById('mapPlaceSearchInput');
+        if (mapSearchInput) mapSearchInput.value = destinationInput.value;
+
+        const coordsBadge = document.getElementById('mapCoordsBadge');
+        if (coordsBadge) coordsBadge.textContent = `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+
+        updateStationLabels();
+        updateGoogleMapsLink(lat, lng);
+
+        // Calculate direct distance
+        const dist = calculateDistanceKm(state.userLat, state.userLng, lat, lng);
+        state.distanceLeft = Math.round(dist * 10) / 10;
+        const hudDistance = document.getElementById('hudDistance');
+        if (hudDistance) hudDistance.textContent = state.distanceLeft.toFixed(1);
+
+        if (leafletMap) {
+          leafletMap.flyTo([lat, lng], Math.max(leafletMap.getZoom(), 12), { duration: 0.6 });
+        }
+
+        recalculateNapWindow();
+        savePreferencesToDevice();
+      }
+
+      // Live Google Maps & Worldwide Places Search Widget
+      function initMapDestinationSearch() {
+        const searchInput = document.getElementById('mapPlaceSearchInput');
+        const searchGoBtn = document.getElementById('mapSearchGoBtn');
+        const resultsDropdown = document.getElementById('mapSearchResults');
+        if (!searchInput || !resultsDropdown) return;
+
+        let debounceTimer = null;
+
+        async function executeSearch(query) {
+          if (!query || query.length < 2) {
+            resultsDropdown.classList.add('hidden');
+            return;
+          }
+
+          // Search known stations cache first
+          const localMatches = STATIONS_CACHE.filter(s => 
+            s.name.toLowerCase().includes(query.toLowerCase()) || 
+            s.city.toLowerCase().includes(query.toLowerCase())
+          ).map(s => ({
+            name: s.name,
+            subtext: s.city,
+            lat: s.lat,
+            lng: s.lng,
+            radius: s.defaultRadiusKm || 10
+          }));
+
+          // Query live Nominatim / OpenStreetMap Places API for any location worldwide
+          let liveMatches = [];
+          try {
+            const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+            if (resp.ok) {
+              const data = await resp.json();
+              liveMatches = data.map(item => ({
+                name: item.display_name.split(',')[0],
+                subtext: item.display_name.split(',').slice(1, 3).join(',').trim(),
+                lat: parseFloat(item.lat),
+                lng: parseFloat(item.lon),
+                radius: 10
+              }));
+            }
+          } catch(e) {}
+
+          const combined = [...localMatches, ...liveMatches].slice(0, 6);
+          if (combined.length === 0) {
+            resultsDropdown.innerHTML = `<div class="p-2.5 text-[11px] text-on-surface-variant text-center">No locations found. Tap directly on the map to pin.</div>`;
+            resultsDropdown.classList.remove('hidden');
+            return;
+          }
+
+          resultsDropdown.innerHTML = combined.map(loc => `
+            <div class="px-3 py-2 text-xs hover:bg-surface-bright cursor-pointer border-b border-outline-variant/20 flex flex-col transition-colors" data-lat="${loc.lat}" data-lng="${loc.lng}" data-name="${loc.name}">
+              <div class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-primary text-[15px]">pin_drop</span>
+                <span class="font-semibold text-on-surface truncate">${loc.name}</span>
+              </div>
+              <span class="text-[10px] text-on-surface-variant ml-5 truncate">${loc.subtext || ''}</span>
+            </div>
+          `).join('');
+          resultsDropdown.classList.remove('hidden');
+        }
+
+        searchInput.addEventListener('input', (e) => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            executeSearch(e.target.value.trim());
+          }, 350);
+        });
+
+        searchGoBtn.addEventListener('click', () => {
+          executeSearch(searchInput.value.trim());
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            executeSearch(searchInput.value.trim());
+          }
+        });
+
+        resultsDropdown.addEventListener('click', (e) => {
+          const item = e.target.closest('[data-lat]');
+          if (item) {
+            const lat = parseFloat(item.getAttribute('data-lat'));
+            const lng = parseFloat(item.getAttribute('data-lng'));
+            const name = item.getAttribute('data-name');
+            setMapDestination(lat, lng, name);
+            resultsDropdown.classList.add('hidden');
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!searchInput.contains(e.target) && !resultsDropdown.contains(e.target)) {
+            resultsDropdown.classList.add('hidden');
+          }
+        });
+      }
+
+      // Sync geofence circle radius on slider change
+      function updateMapGeofenceRadius(radiusKm) {
+        if (geofenceCircle) {
+          geofenceCircle.setRadius(radiusKm * 1000);
+        }
       }
 
       // --- ROUTE SIMULATION & RECENTER ---
       const toggleMapMode = document.getElementById('toggleMapMode');
       const simPlayIcon = document.getElementById('simPlayIcon');
       const recenterBtn = document.getElementById('recenterBtn');
-      const liveVehicleMarker = document.getElementById('liveVehicleMarker');
       let simInterval = null;
 
-      // Coordinate waypoint interpolator along route: Stamford (45, 168) -> Grand Central (300, 75)
       let simStep = 0;
+      // Coordinates approximating Stamford CT -> Grand Central NY route
       const simSteps = [
-        { x: 45, y: 168, dist: 55.0 },
-        { x: 105, y: 155, dist: 42.0 },
-        { x: 160, y: 142, dist: 31.0 },
-        { x: 192, y: 133, dist: 24.8 },
-        { x: 235, y: 110, dist: 15.5 },
-        { x: 265, y: 92,  dist: 8.2 }, // enters 10km geofence!
-        { x: 295, y: 76,  dist: 1.1 }
+        { lat: 41.0469, lng: -73.5425, dist: 55.0 },
+        { lat: 40.9650, lng: -73.7120, dist: 42.0 },
+        { lat: 40.8950, lng: -73.8340, dist: 31.0 },
+        { lat: 40.8400, lng: -73.8900, dist: 24.8 },
+        { lat: 40.8050, lng: -73.9350, dist: 15.5 },
+        { lat: 40.7680, lng: -73.9650, dist: 8.2 }, // enters 10km geofence!
+        { lat: 40.7550, lng: -73.9740, dist: 1.1 }
       ];
 
       toggleMapMode.addEventListener('click', () => {
@@ -1679,17 +2057,36 @@
           simInterval = setInterval(() => {
             simStep = (simStep + 1) % simSteps.length;
             const pt = simSteps[simStep];
-            liveVehicleMarker.style.transform = `translate(${pt.x}px, ${pt.y}px)`;
+            state.userLat = pt.lat;
+            state.userLng = pt.lng;
+
+            if (userMarker) {
+              userMarker.setLatLng([pt.lat, pt.lng]);
+            }
+            if (routePolyline) {
+              routePolyline.setLatLngs([[pt.lat, pt.lng], [state.destLat, state.destLng]]);
+            }
+
             state.distanceLeft = pt.dist;
-            document.getElementById('hudDistance').textContent = pt.dist.toFixed(1);
+            const hudDist = document.getElementById('hudDistance');
+            if (hudDist) hudDist.textContent = pt.dist.toFixed(1);
             recalculateNapWindow();
 
-            // Auto-trigger alarm when within geofence!
-            if (pt.dist <= state.geofenceRadius) {
+            // Auto-trigger alarm when within geofence or secondary threshold!
+            const simFirstTrigger = pt.dist <= state.geofenceRadius && !state.hasSecondaryAlarmFired;
+            const simSecondaryTrigger = state.isSecondaryAlarmArmed && pt.dist <= state.secondaryTriggerDistance;
+
+            if (simFirstTrigger || simSecondaryTrigger) {
+              if (simSecondaryTrigger) {
+                state.isSecondaryAlarmArmed = false;
+                state.hasSecondaryAlarmFired = true;
+              }
               clearInterval(simInterval);
               state.isSimulatingRoute = false;
               simPlayIcon.textContent = 'fast_forward';
               toggleMapMode.classList.remove('bg-tertiary', 'text-on-tertiary');
+              initOrResetCognitivePuzzle();
+              startAlarmCountdown(180);
               switchTab('tab-alarm-trigger', 'Alarm Trigger');
               startSynthesizer(state.soundTone);
             }
@@ -1702,14 +2099,12 @@
       });
 
       recenterBtn.addEventListener('click', () => {
-        liveVehicleMarker.style.transition = 'transform 0.4s ease-out';
-        liveVehicleMarker.style.transform = 'translate(192px, 133px) scale(1.4)';
-        setTimeout(() => {
-          liveVehicleMarker.style.transform = 'translate(192px, 133px) scale(1)';
-        }, 400);
+        if (leafletMap) {
+          leafletMap.flyTo([state.userLat, state.userLng], 12, { duration: 0.8 });
+        }
       });
 
-      // --- DUAL-MODE VIDEO PLAYER PORTAL (EMPTY CANVAS + LOCAL VIDEO DROP-IN) ---
+      // --- DUAL-MODE VIDEO PLAYER PORTAL ---
       const videoContainer = document.getElementById('videoContainer');
       const actualVideoPlayer = document.getElementById('actualVideoPlayer');
       const placeholderCanvas = document.getElementById('placeholderCanvas');
@@ -1728,10 +2123,9 @@
       const videoStatusText = document.getElementById('videoStatusText');
 
       let isVideoLoaded = false;
-      let simulatedProgress = 28; // percent
+      let simulatedProgress = 28;
       let simulatedPlayInterval = null;
 
-      // Handle file selection from local device
       localVideoPicker.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -1739,7 +2133,6 @@
         }
       });
 
-      // Drag and drop video file onto player
       videoContainer.addEventListener('dragover', (e) => {
         e.preventDefault();
         videoContainer.classList.add('ring-2', 'ring-primary');
@@ -1779,7 +2172,7 @@
             centerPlayIcon.textContent = 'play_arrow';
           }
         } else {
-          // Simulated demo stream playback
+          // Simulated demo playback
           if (simulatedPlayInterval) {
             clearInterval(simulatedPlayInterval);
             simulatedPlayInterval = null;
@@ -1794,7 +2187,7 @@
               scrubberFill.style.width = simulatedProgress + '%';
               scrubberThumb.style.left = `calc(${simulatedProgress}% - 5px)`;
               
-              const totalSec = 225; // 03:45
+              const totalSec = 225;
               const currSec = Math.floor((simulatedProgress / 100) * totalSec);
               const m = Math.floor(currSec / 60);
               const s = currSec % 60;
@@ -1805,13 +2198,11 @@
       }
 
       playCenterZone.addEventListener('click', (e) => {
-        // Only toggle if not clicking the file picker button directly
         if (e.target.closest('label')) return;
         togglePlayPause();
       });
       togglePlayBtn.addEventListener('click', togglePlayPause);
 
-      // Scrubber Seek
       scrubberArea.addEventListener('click', (e) => {
         const rect = scrubberArea.getBoundingClientRect();
         const clickRatio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -1824,7 +2215,6 @@
         }
       });
 
-      // Video event listeners
       actualVideoPlayer.addEventListener('timeupdate', () => {
         if (!actualVideoPlayer.duration) return;
         const pct = (actualVideoPlayer.currentTime / actualVideoPlayer.duration) * 100;
@@ -1869,14 +2259,18 @@
             t.classList.add('bg-surface-container-low', 'opacity-70');
             t.classList.remove('bg-surface-container', 'opacity-100', 'border-primary/30');
             const iconWrap = t.querySelector('div');
-            iconWrap.classList.remove('text-primary');
-            iconWrap.classList.add('text-on-surface-variant');
+            if (iconWrap) {
+              iconWrap.classList.remove('text-primary');
+              iconWrap.classList.add('text-on-surface-variant');
+            }
           });
           tab.classList.remove('bg-surface-container-low', 'opacity-70');
           tab.classList.add('bg-surface-container', 'opacity-100', 'border-primary/30');
           const iconWrap = tab.querySelector('div');
-          iconWrap.classList.add('text-primary');
-          iconWrap.classList.remove('text-on-surface-variant');
+          if (iconWrap) {
+            iconWrap.classList.add('text-primary');
+            iconWrap.classList.remove('text-on-surface-variant');
+          }
 
           const chap = parseInt(tab.getAttribute('data-chapter'), 10);
           if (isVideoLoaded && actualVideoPlayer.duration) {
@@ -1897,33 +2291,22 @@
           const isOpen = !content.classList.contains('hidden');
           if (isOpen) {
             content.classList.add('hidden');
-            icon.style.transform = 'rotate(0deg)';
+            if (icon) icon.style.transform = 'rotate(0deg)';
           } else {
             content.classList.remove('hidden');
-            icon.style.transform = 'rotate(180deg)';
+            if (icon) icon.style.transform = 'rotate(180deg)';
           }
         });
       });
 
-      // --- ALARM TRIGGER & COGNITIVE MATH LOCK ---
-      let alarmCountdownSec = 252; // 04:12
+      // --- DYNAMIC ALARM TRIGGER & COGNITIVE MATH ENGINE ---
+      let alarmCountdownTimer = null;
       const alarmTimerMin = document.getElementById('alarm-timer-min');
       const alarmTimerSec = document.getElementById('alarm-timer-sec');
-
-      setInterval(() => {
-        if (alarmCountdownSec > 0) {
-          alarmCountdownSec--;
-          const m = Math.floor(alarmCountdownSec / 60);
-          const s = alarmCountdownSec % 60;
-          if (alarmTimerMin && alarmTimerSec) {
-            alarmTimerMin.textContent = m < 10 ? '0' + m : m;
-            alarmTimerSec.textContent = s < 10 ? '0' + s : s;
-          }
-        }
-      }, 1000);
-
-      const mathOptBtns = document.querySelectorAll('.math-opt-btn');
       const answerPreview = document.getElementById('answer-preview');
+      const puzzleNum1 = document.getElementById('puzzle-num1');
+      const puzzleNum2 = document.getElementById('puzzle-num2');
+      const optionGrid = document.getElementById('option-grid');
       const feedbackAlert = document.getElementById('feedback-alert');
       const feedbackText = document.getElementById('feedback-text');
       const feedbackIcon = document.getElementById('feedback-icon');
@@ -1935,46 +2318,136 @@
       const pinOverrideBtn = document.getElementById('pinOverrideBtn');
       const cognitiveCard = document.getElementById('cognitive-card');
 
-      mathOptBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (state.cognitiveSolved) return;
-          const val = parseInt(btn.getAttribute('data-value'), 10);
-          answerPreview.textContent = val;
+      function startAlarmCountdown(initialSeconds) {
+        if (alarmCountdownTimer) clearInterval(alarmCountdownTimer);
+        let sec = initialSeconds || 240;
 
-          if (val === 32) {
-            // Correct! 18 + 14 = 32
-            state.cognitiveSolved = true;
-            btn.classList.replace('bg-surface-container-high', 'bg-tertiary');
-            btn.classList.replace('text-on-surface', 'text-on-tertiary');
+        function render() {
+          const m = Math.floor(sec / 60);
+          const s = sec % 60;
+          if (alarmTimerMin && alarmTimerSec) {
+            alarmTimerMin.textContent = m < 10 ? '0' + m : m;
+            alarmTimerSec.textContent = s < 10 ? '0' + s : s;
+          }
+        }
+        render();
 
+        alarmCountdownTimer = setInterval(() => {
+          if (sec > 0) {
+            sec--;
+            render();
+          } else {
+            clearInterval(alarmCountdownTimer);
+          }
+        }, 1000);
+      }
+
+      function initOrResetCognitivePuzzle() {
+        state.cognitiveSolved = false;
+        state.shakeCount = 0;
+        if (shakeCounter) shakeCounter.textContent = 'Tap to Shake (5x)';
+
+        // Generate dynamic arithmetic
+        const num1 = Math.floor(Math.random() * 28) + 12;
+        const num2 = Math.floor(Math.random() * 28) + 12;
+        const correct = num1 + num2;
+
+        state.puzzleNum1 = num1;
+        state.puzzleNum2 = num2;
+        state.puzzleAnswer = correct;
+
+        if (puzzleNum1) puzzleNum1.textContent = num1;
+        if (puzzleNum2) puzzleNum2.textContent = num2;
+        if (answerPreview) answerPreview.textContent = '?';
+
+        // Generate 3 plausible distractors
+        const dist = new Set();
+        while (dist.size < 3) {
+          const offset = [-10, -2, -1, 1, 2, 10, -8, 8][Math.floor(Math.random() * 8)];
+          const cand = correct + offset;
+          if (cand > 0 && cand !== correct) dist.add(cand);
+        }
+        const choices = [...dist, correct].sort(() => Math.random() - 0.5);
+
+        if (optionGrid) {
+          optionGrid.innerHTML = choices.map(c => `
+            <button class="math-opt-btn h-12 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-container-highest active:scale-95 transition-all text-base font-headline font-bold flex items-center justify-center shadow-sm border border-outline-variant/30" data-value="${c}">
+              ${c}
+            </button>
+          `).join('');
+
+          optionGrid.querySelectorAll('.math-opt-btn').forEach(btn => {
+            btn.addEventListener('click', handlePuzzleOptionClick);
+          });
+        }
+
+        if (feedbackAlert) {
+          feedbackAlert.classList.add('hidden');
+          feedbackAlert.className = 'hidden px-3 py-2 rounded text-[11px] font-label font-medium items-center justify-between';
+        }
+
+        if (puzzleStatus) {
+          puzzleStatus.className = 'px-2 py-0.5 rounded bg-surface-container-highest text-tertiary text-[10px] font-label font-bold flex items-center gap-1 border border-tertiary/20';
+          puzzleStatus.innerHTML = '<span class="material-symbols-outlined text-[12px]">lock</span><span>ARMED</span>';
+        }
+
+        if (dismissAlarmBtn) {
+          dismissAlarmBtn.disabled = true;
+          dismissAlarmBtn.className = 'w-full py-3.5 px-4 rounded-xl font-headline font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 bg-surface-container-highest text-secondary-fixed opacity-50 cursor-not-allowed shadow-lg border border-outline-variant/40';
+          dismissAlarmBtn.innerHTML = '<span class="material-symbols-outlined text-[19px]">notifications_off</span><span>Solve Puzzle to Silence Alarm</span>';
+        }
+      }
+
+      function handlePuzzleOptionClick(e) {
+        if (state.cognitiveSolved) return;
+        const btn = e.currentTarget;
+        const val = parseInt(btn.getAttribute('data-value'), 10);
+        if (answerPreview) answerPreview.textContent = val;
+
+        if (val === state.puzzleAnswer) {
+          // Correct answer!
+          state.cognitiveSolved = true;
+          btn.classList.replace('bg-surface-container-high', 'bg-tertiary');
+          btn.classList.replace('text-on-surface', 'text-on-tertiary');
+
+          if (feedbackAlert && feedbackText && feedbackIcon) {
             feedbackAlert.className = 'px-3 py-2 rounded text-[11px] font-label font-bold flex items-center justify-between bg-tertiary-container text-on-tertiary-container mt-1 animate-pulse border border-tertiary/40';
             feedbackText.textContent = "Cognitive Verification Complete: Awakened!";
             feedbackIcon.textContent = "check_circle";
+            feedbackAlert.classList.remove('hidden');
+          }
 
+          if (puzzleStatus) {
             puzzleStatus.className = 'px-2 py-0.5 rounded bg-tertiary text-on-tertiary text-[10px] font-label font-bold flex items-center gap-1';
             puzzleStatus.innerHTML = '<span class="material-symbols-outlined text-[12px]">lock_open</span><span>UNLOCKED</span>';
+          }
 
+          if (dismissAlarmBtn) {
             dismissAlarmBtn.disabled = false;
-            dismissAlarmBtn.classList.remove('bg-surface-container-highest', 'text-secondary-fixed', 'opacity-50', 'cursor-not-allowed');
-            dismissAlarmBtn.classList.add('bg-primary', 'text-on-primary', 'hover:bg-primary-container', 'active:scale-95', 'cursor-pointer');
+            dismissAlarmBtn.className = 'w-full py-3.5 px-4 rounded-xl font-headline font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 bg-primary text-on-primary hover:bg-primary-container active:scale-95 cursor-pointer shadow-lg';
             dismissAlarmBtn.innerHTML = '<span class="material-symbols-outlined text-[19px]">notifications_off</span><span>Turn Off Siren &amp; Complete Nap</span>';
-          } else {
-            // Incorrect
+          }
+        } else {
+          // Incorrect answer
+          if (cognitiveCard) {
             cognitiveCard.classList.remove('shake-anim');
-            void cognitiveCard.offsetWidth; // retrigger reflow
+            void cognitiveCard.offsetWidth;
             cognitiveCard.classList.add('shake-anim');
+          }
 
-            btn.classList.add('bg-error-container', 'text-on-error-container');
-            setTimeout(() => {
-              btn.classList.remove('bg-error-container', 'text-on-error-container');
-            }, 600);
+          btn.classList.add('bg-error-container', 'text-on-error-container');
+          setTimeout(() => {
+            btn.classList.remove('bg-error-container', 'text-on-error-container');
+          }, 600);
 
+          if (feedbackAlert && feedbackText && feedbackIcon) {
             feedbackAlert.className = 'px-3 py-2 rounded text-[11px] font-label font-medium flex items-center justify-between bg-error-container text-on-error-container mt-1';
             feedbackText.textContent = "Incorrect. Try again to awaken your mind.";
             feedbackIcon.textContent = "error";
+            feedbackAlert.classList.remove('hidden');
           }
-        });
-      });
+        }
+      }
 
       shakeBtn.addEventListener('click', () => {
         if (state.cognitiveSolved) return;
@@ -1985,28 +2458,25 @@
           puzzleStatus.className = 'px-2 py-0.5 rounded bg-tertiary text-on-tertiary text-[10px] font-label font-bold flex items-center gap-1';
           puzzleStatus.innerHTML = '<span class="material-symbols-outlined text-[12px]">lock_open</span><span>UNLOCKED</span>';
           dismissAlarmBtn.disabled = false;
-          dismissAlarmBtn.classList.remove('bg-surface-container-highest', 'text-secondary-fixed', 'opacity-50', 'cursor-not-allowed');
-          dismissAlarmBtn.classList.add('bg-primary', 'text-on-primary', 'cursor-pointer');
+          dismissAlarmBtn.className = 'w-full py-3.5 px-4 rounded-xl font-headline font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 bg-primary text-on-primary cursor-pointer shadow-lg';
           dismissAlarmBtn.innerHTML = '<span class="material-symbols-outlined text-[19px]">notifications_off</span><span>Turn Off Siren (Shake Bypass)</span>';
         }
       });
 
       pinOverrideBtn.addEventListener('click', () => {
-        const pin = prompt('Enter 4-Digit Emergency PIN:');
+        const pin = prompt('Enter 4-Digit Emergency PIN (0000):');
         if (pin === '0000' || pin === '1234') {
           state.cognitiveSolved = true;
           puzzleStatus.innerHTML = '<span class="material-symbols-outlined text-[12px]">lock_open</span><span>PIN UNLOCKED</span>';
           dismissAlarmBtn.disabled = false;
-          dismissAlarmBtn.classList.remove('bg-surface-container-highest', 'opacity-50', 'cursor-not-allowed');
-          dismissAlarmBtn.classList.add('bg-primary', 'text-on-primary', 'cursor-pointer');
+          dismissAlarmBtn.className = 'w-full py-3.5 px-4 rounded-xl font-headline font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 bg-primary text-on-primary cursor-pointer shadow-lg';
           dismissAlarmBtn.innerHTML = '<span class="material-symbols-outlined text-[19px]">notifications_off</span><span>Turn Off Siren</span>';
         }
       });
 
-      // --- ON-DEVICE LOCALSTORAGE & BACKEND PERSISTENCE ---
+      // --- LOCALSTORAGE & BACKEND PERSISTENCE ---
       const API_BASE = window.location.origin.includes('http') ? '' : 'http://localhost:5000';
 
-      // Save user preferences directly on device
       function savePreferencesToDevice() {
         try {
           const preferences = {
@@ -2018,13 +2488,13 @@
             etaMinutes: state.etaMinutes,
             mode: state.mode,
             soundTone: state.soundTone,
-            hapticEnabled: state.hapticEnabled
+            hapticEnabled: state.hapticEnabled,
+            halfDistanceAlarmEnabled: state.halfDistanceAlarmEnabled
           };
           localStorage.setItem('destiwake_prefs', JSON.stringify(preferences));
         } catch (e) {}
       }
 
-      // Load user preferences from device
       function loadPreferencesFromDevice() {
         try {
           const saved = localStorage.getItem('destiwake_prefs');
@@ -2041,22 +2511,55 @@
               state.soundTone = p.soundTone;
               toneSelect.value = p.soundTone;
             }
+            if (typeof p.halfDistanceAlarmEnabled === 'boolean' && p.halfDistanceAlarmEnabled) {
+              state.halfDistanceAlarmEnabled = true;
+              state.isSecondaryAlarmArmed = true;
+              if (toggleHalfAlarmBtn) {
+                toggleHalfAlarmBtn.classList.replace('bg-surface-container-highest', 'bg-primary');
+                halfAlarmKnob.classList.replace('bg-on-surface-variant', 'bg-on-primary');
+                halfAlarmKnob.classList.add('translate-x-4');
+              }
+            }
             if (p.vehicle) {
               const pill = document.querySelector(`.vehicle-pill[data-vehicle="${p.vehicle}"]`);
               if (pill) pill.click();
             }
+            updateStationLabels();
           }
         } catch (e) {}
       }
 
-      // Save nap session to on-device history
+      function renderRecentSessions(sessions) {
+        const container = document.getElementById('recentSessionsContainer');
+        const countBadge = document.getElementById('recentSessionsCount');
+        if (!container || !sessions || sessions.length === 0) return;
+
+        if (countBadge) countBadge.textContent = `${sessions.length} Logs`;
+        container.innerHTML = sessions.slice(0, 5).map(s => `
+          <div class="bg-surface-container rounded-xl p-3 shadow-sm border border-outline-variant/30 flex items-center justify-between">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary flex-shrink-0">
+                <span class="material-symbols-outlined text-[18px]">${s.vehicle === 'metro' ? 'subway' : (s.vehicle === 'bus' ? 'directions_bus' : 'train')}</span>
+              </div>
+              <div class="flex flex-col min-w-0">
+                <span class="text-xs font-headline font-semibold text-on-surface truncate">${s.origin} → ${s.destination}</span>
+                <span class="text-[10px] text-on-surface-variant">${s.napDurationMinutes || 20}m Nap • ${s.geofenceRadiusKm || 10}km Fence</span>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary text-[10px] font-label font-bold flex-shrink-0">
+              ${s.status || 'COMPLETED'}
+            </span>
+          </div>
+        `).join('');
+      }
+
       function saveSessionToDevice(session) {
         try {
           const historyRaw = localStorage.getItem('destiwake_local_history');
           const history = historyRaw ? JSON.parse(historyRaw) : [];
           history.unshift(session);
           localStorage.setItem('destiwake_local_history', JSON.stringify(history));
-          console.log('✅ Session saved securely on user device:', session);
+          renderRecentSessions(history);
         } catch (e) {}
       }
 
@@ -2064,7 +2567,6 @@
         try {
           const res = await fetch(`${API_BASE}/api/health`);
           if (res.ok) {
-            const data = await res.json();
             const gpsBadge = document.getElementById('gpsIndicatorText');
             if (gpsBadge) {
               gpsBadge.textContent = 'Device + Cloud';
@@ -2073,8 +2575,12 @@
             loadHistoryFromBackend();
           }
         } catch (e) {
-          // Graceful offline fallback
           console.log('Running in 100% On-Device Local-First mode.');
+          // Load from local storage
+          const localHist = localStorage.getItem('destiwake_local_history');
+          if (localHist) {
+            try { renderRecentSessions(JSON.parse(localHist)); } catch(err) {}
+          }
         }
       }
 
@@ -2083,41 +2589,51 @@
           const res = await fetch(`${API_BASE}/api/history`);
           if (res.ok) {
             const data = await res.json();
-            console.log('Commute history synced with backend:', data);
+            if (data.totalNaps) document.getElementById('statTotalNaps').textContent = data.totalNaps;
+            if (data.onTimePercentage) document.getElementById('statOnTimePct').textContent = `${data.onTimePercentage}%`;
+            if (data.totalSleepMinutes) {
+              const h = Math.floor(data.totalSleepMinutes / 60);
+              const m = data.totalSleepMinutes % 60;
+              document.getElementById('statSleepTime').textContent = `${h}h ${m}m`;
+            }
+            if (data.averageBufferMinutes) document.getElementById('statAvgBuffer').innerHTML = `${data.averageBufferMinutes} <span class="text-xs font-normal text-on-surface-variant">min</span>`;
+            if (data.recentSessions) renderRecentSessions(data.recentSessions);
           }
         } catch (e) {}
       }
 
       async function logNapSession(sessionData) {
-        // 1. Always save directly on user's device first (offline-first & private)
         saveSessionToDevice(sessionData);
-
-        // 2. Also sync to backend server if reachable
         try {
           await fetch(`${API_BASE}/api/history`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(sessionData)
           });
+          loadHistoryFromBackend();
         } catch (e) {}
       }
 
-      // Auto-save preferences when user updates routes or settings
-      originInput.addEventListener('change', savePreferencesToDevice);
-      destinationInput.addEventListener('change', savePreferencesToDevice);
+      originInput.addEventListener('change', () => { updateStationLabels(); savePreferencesToDevice(); });
+      destinationInput.addEventListener('change', () => { updateStationLabels(); savePreferencesToDevice(); });
       geofenceSlider.addEventListener('change', savePreferencesToDevice);
       toneSelect.addEventListener('change', savePreferencesToDevice);
 
       dismissAlarmBtn.addEventListener('click', () => {
         if (!state.cognitiveSolved) return;
+        state.alarmSounding = false;
+        state.napActive = false;
         stopSynthesizer();
         stopSilentKeepalive();
+        stopLiveGpsTracking();
+        releaseWakeLock();
+        if (alarmCountdownTimer) clearInterval(alarmCountdownTimer);
 
         logNapSession({
           id: `nap_${Date.now()}`,
           date: new Date().toISOString(),
-          origin: originInput.value,
-          destination: destinationInput.value,
+          origin: originInput.value || 'Stamford Station',
+          destination: destinationInput.value || 'Grand Central Terminal',
           vehicle: state.vehicle,
           speedAvgKmH: state.speed,
           distanceCoveredKm: 24.8,
@@ -2127,24 +2643,48 @@
           cognitiveSolved: true
         });
 
-        alert('Welcome back! You have arrived safely at Grand Central Terminal.');
+        alert(`Welcome back! You have arrived safely at ${destinationInput.value}.`);
         switchTab('tab-history-and-stats', 'History & Stats');
       });
 
       snoozeAlarmBtn.addEventListener('click', () => {
+        state.alarmSounding = false;
         stopSynthesizer();
         stopSilentKeepalive();
+        if (alarmCountdownTimer) clearInterval(alarmCountdownTimer);
         alert('Alarm snoozed for 3 minutes! Siren will re-sound at +3 min window.');
         switchTab('tab-transit-hud', 'Transit HUD');
       });
+
+      const snoozeHalfDistBtn = document.getElementById('snooze-half-dist-btn');
+      if (snoozeHalfDistBtn) {
+        snoozeHalfDistBtn.addEventListener('click', () => {
+          state.alarmSounding = false;
+          stopSynthesizer();
+          stopSilentKeepalive();
+          if (alarmCountdownTimer) clearInterval(alarmCountdownTimer);
+
+          const halfDist = (state.geofenceRadius / 2).toFixed(1);
+          state.isSecondaryAlarmArmed = true;
+          state.hasSecondaryAlarmFired = false;
+          state.secondaryTriggerDistance = state.geofenceRadius / 2;
+
+          alert(`Alarm snoozed to half-distance! Failsafe siren will re-sound as soon as you reach ${halfDist} km.`);
+          switchTab('tab-transit-hud', 'Transit HUD');
+        });
+      }
 
       // Load on-device preferences & sync
       loadPreferencesFromDevice();
       checkBackendSync();
       startDeadReckoningWatcher();
-
-      // Initial nap window calculation
       recalculateNapWindow();
+      initLeafletMap();
+
+      // Ensure Leaflet tiles calculate dimensions properly
+      window.addEventListener('resize', () => {
+        if (leafletMap) leafletMap.invalidateSize();
+      });
 
     })();
   </script>
