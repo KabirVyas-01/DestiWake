@@ -3,7 +3,7 @@
  * --------------------------------------------
  * Zero-dependency native Node.js REST API & static file server.
  * Supports geofencing engine, station database, commute session logging,
- * puzzle verification, live trip sharing, and video streaming with HTTP byte-range requests.
+ * puzzle verification, and live trip sharing.
  */
 
 const http = require('http');

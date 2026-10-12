@@ -149,8 +149,8 @@
         <div class="grid grid-cols-3 gap-2 text-center">
           <div class="flex flex-col items-center justify-center p-1.5 rounded-lg bg-surface-container">
             <div class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-tertiary animate-ping"></span>
-              <span class="text-xs font-semibold text-tertiary tracking-tight">±4m Lock</span>
+              <span class="w-2 h-2 rounded-full bg-tertiary animate-ping" id="statusGpsPingDot"></span>
+              <span class="text-xs font-semibold text-tertiary tracking-tight" id="statusGpsPrecisionText">GPS Standby</span>
             </div>
             <span class="text-[10px] text-on-surface-variant uppercase tracking-wider font-label mt-0.5">Precision</span>
           </div>
@@ -446,282 +446,7 @@
     </div>
 
 
-    <!-- ========================================== -->
-    <!-- TAB 2: VIDEO GUIDE & COMMUTER PORTAL       -->
-    <!-- ========================================== -->
-    <div id="tab-video-guide" class="tab-pane hidden flex-col w-full px-3 py-2 gap-5">
-      
-      <!-- Info Banner -->
-      <section class="bg-surface-container rounded-xl p-4 shadow-md flex flex-col gap-2 relative overflow-hidden border border-outline-variant/40">
-        <div class="absolute -right-10 -bottom-10 w-36 h-36 rounded-full bg-primary/10 blur-2xl pointer-events-none"></div>
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
-          <span class="text-[11px] font-label font-semibold text-primary uppercase tracking-wider">Interactive Video Portal</span>
-        </div>
-        <h2 class="text-xl font-headline font-bold text-on-surface tracking-tight leading-snug">
-          Master Your Transit Naps
-        </h2>
-        <p class="text-xs font-body text-on-surface-variant leading-relaxed">
-          Watch how geo-fencing, speed-adjusted buffers, and cognitive anti-oversleep locks protect your commute with zero overshoot anxiety.
-        </p>
-      </section>
 
-      <!-- 16:9 VIDEO PLAYER FRAME -->
-      <section class="flex flex-col gap-3">
-        <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-primary text-[18px]">smart_display</span>
-            <span class="text-xs font-headline font-semibold text-on-surface">Transit Demo &amp; Feature Video</span>
-          </div>
-          <span class="text-[10px] font-label font-medium px-2 py-0.5 rounded-full bg-surface-container-high text-tertiary border border-tertiary/30">AI Ready</span>
-        </div>
-
-        <div id="videoContainer" class="relative w-full aspect-video rounded-xl bg-surface-container-lowest overflow-hidden shadow-2xl select-none group border border-outline-variant/50">
-          <!-- Hidden Native Video Element -->
-          <video id="actualVideoPlayer" class="hidden w-full h-full object-cover relative z-10" playsinline preload="metadata">
-            <source id="videoSource" src="videos/demo.mp4" type="video/mp4" />
-          </video>
-
-          <!-- Sleek Radar Grid Backdrop -->
-          <div id="placeholderCanvas" class="absolute inset-0">
-            <svg class="absolute inset-0 w-full h-full opacity-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="radar-grid" width="28" height="28" patternUnits="userSpaceOnUse">
-                  <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#a78bfa" stroke-width="0.5" stroke-opacity="0.3"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#radar-grid)" />
-              <circle cx="50%" cy="50%" r="28%" fill="none" stroke="#a78bfa" stroke-width="0.5" stroke-dasharray="3 3"/>
-              <circle cx="50%" cy="50%" r="46%" fill="none" stroke="#34d399" stroke-width="0.5" stroke-dasharray="4 4" class="opacity-40"/>
-            </svg>
-
-            <!-- Soundwave Graphic Animation -->
-            <div class="absolute inset-x-8 top-10 bottom-14 flex items-center justify-center gap-1 opacity-25 pointer-events-none">
-              <div class="w-1 bg-primary h-8 rounded-full animate-pulse"></div>
-              <div class="w-1 bg-tertiary h-14 rounded-full animate-pulse" style="animation-delay: 120ms;"></div>
-              <div class="w-1 bg-primary h-5 rounded-full animate-pulse" style="animation-delay: 340ms;"></div>
-              <div class="w-1 bg-primary h-20 rounded-full animate-pulse" style="animation-delay: 80ms;"></div>
-              <div class="w-1 bg-tertiary h-12 rounded-full animate-pulse" style="animation-delay: 200ms;"></div>
-              <div class="w-1 bg-primary h-16 rounded-full animate-pulse" style="animation-delay: 450ms;"></div>
-              <div class="w-1 bg-primary h-9 rounded-full animate-pulse" style="animation-delay: 300ms;"></div>
-              <div class="w-1 bg-tertiary h-4 rounded-full animate-pulse" style="animation-delay: 180ms;"></div>
-            </div>
-
-            <!-- Center Action Zone -->
-            <div id="playCenterZone" class="absolute inset-0 flex flex-col items-center justify-center p-4 z-10 cursor-pointer bg-gradient-to-t from-surface-container-lowest/90 via-surface-container-lowest/40 to-transparent">
-              <div class="relative flex items-center justify-center mb-2">
-                <div class="absolute w-14 h-14 rounded-full bg-primary/20 animate-ping"></div>
-                <div class="relative w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg transform active:scale-95 transition-transform">
-                  <span class="material-symbols-outlined text-[26px] ml-0.5" id="centerPlayIcon">play_arrow</span>
-                </div>
-              </div>
-              <p id="videoStatusText" class="text-[11px] font-body text-center text-on-surface font-semibold max-w-[260px] drop-shadow-sm leading-tight">
-                Demo Video: Master transit naps with DestiWake
-              </p>
-              <div class="flex items-center gap-1.5 mt-2">
-                <label for="localVideoPicker" class="px-2.5 py-1 rounded bg-surface-container-highest text-primary text-[10px] font-bold tracking-tight border border-primary/30 hover:bg-surface-bright cursor-pointer flex items-center gap-1 shadow-sm">
-                  <span class="material-symbols-outlined text-[13px]">upload_file</span>
-                  <span>Select Local Video</span>
-                </label>
-                <input type="file" id="localVideoPicker" accept="video/mp4,video/webm,video/quicktime" class="hidden" />
-              </div>
-              <span class="text-[9px] font-label text-on-surface-variant mt-1">Or drop video file anywhere into player</span>
-            </div>
-          </div>
-
-          <!-- Top Overlay Badges -->
-          <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-20 pointer-events-none">
-            <div id="videoDurationBadge" class="px-2 py-0.5 rounded bg-surface-container-highest/90 backdrop-blur-md text-[10px] font-label font-bold text-on-surface tracking-wider shadow-sm border border-outline-variant/30">
-              03:45
-            </div>
-            <div class="flex items-center gap-1 px-2 py-0.5 rounded bg-primary-container text-on-primary-container text-[10px] font-label font-bold tracking-tight shadow-sm border border-primary/30">
-              <span class="material-symbols-outlined text-[11px]">auto_awesome</span>
-              <span>1080p AI Demo</span>
-            </div>
-          </div>
-
-          <!-- Bottom Interactive Scrubber & Controls Bar -->
-          <div class="absolute bottom-0 inset-x-0 h-11 bg-surface-container-high/95 backdrop-blur-md px-2.5 flex items-center gap-2 z-20 border-t border-outline-variant/30">
-            <!-- Play/Pause Button -->
-            <button id="togglePlayBtn" aria-label="Toggle Play" class="w-7 h-7 rounded flex items-center justify-center text-on-surface hover:text-primary transition-colors flex-shrink-0">
-              <span class="material-symbols-outlined text-[20px]" id="scrubberPlayIcon">play_arrow</span>
-            </button>
-
-            <!-- Progress Scrubber -->
-            <div id="scrubberArea" class="flex-1 flex flex-col justify-center h-full cursor-pointer relative py-2">
-              <div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden relative">
-                <div id="scrubberFill" class="h-full bg-tertiary rounded-full transition-all duration-100" style="width: 28%;"></div>
-              </div>
-              <div id="scrubberThumb" class="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-on-surface shadow pointer-events-none transition-all duration-100" style="left: calc(28% - 5px);"></div>
-            </div>
-
-            <!-- Timecode -->
-            <span id="timecodeDisplay" class="text-[10px] font-label font-medium text-on-surface-variant flex-shrink-0 tracking-tight font-mono">
-              01:03 / 03:45
-            </span>
-
-            <!-- Volume Icon -->
-            <button id="muteBtn" aria-label="Toggle Mute" class="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors flex-shrink-0">
-              <span class="material-symbols-outlined text-[17px]" id="volumeIcon">volume_up</span>
-            </button>
-
-            <!-- Fullscreen -->
-            <button id="fullscreenBtn" aria-label="Fullscreen" class="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors flex-shrink-0">
-              <span class="material-symbols-outlined text-[17px]">fullscreen</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Video Chapters -->
-        <div class="grid grid-cols-3 gap-1.5">
-          <button class="chapter-tab flex flex-col items-start p-2 rounded-lg bg-surface-container text-left transition-all active:scale-95 shadow-sm border border-primary/30" data-chapter="0">
-            <div class="flex items-center gap-1 text-primary">
-              <span class="material-symbols-outlined text-[14px]">share_location</span>
-              <span class="text-[9px] font-label font-bold uppercase tracking-wider">Part 01</span>
-            </div>
-            <span class="text-[11px] font-headline font-semibold text-on-surface leading-tight mt-1 line-clamp-1">Basic Geofence</span>
-          </button>
-          <button class="chapter-tab flex flex-col items-start p-2 rounded-lg bg-surface-container-low text-left opacity-70 transition-all active:scale-95 border border-outline-variant/30" data-chapter="1">
-            <div class="flex items-center gap-1 text-on-surface-variant">
-              <span class="material-symbols-outlined text-[14px]">speed</span>
-              <span class="text-[9px] font-label font-bold uppercase tracking-wider">Part 02</span>
-            </div>
-            <span class="text-[11px] font-headline font-semibold text-on-surface leading-tight mt-1 line-clamp-1">Train Speed Model</span>
-          </button>
-          <button class="chapter-tab flex flex-col items-start p-2 rounded-lg bg-surface-container-low text-left opacity-70 transition-all active:scale-95 border border-outline-variant/30" data-chapter="2">
-            <div class="flex items-center gap-1 text-on-surface-variant">
-              <span class="material-symbols-outlined text-[14px]">psychology</span>
-              <span class="text-[9px] font-label font-bold uppercase tracking-wider">Part 03</span>
-            </div>
-            <span class="text-[11px] font-headline font-semibold text-on-surface leading-tight mt-1 line-clamp-1">Cognitive Lock</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- Best Ways to Use Guide Cards -->
-      <section class="flex flex-col gap-3">
-        <div class="flex items-center justify-between px-1">
-          <h3 class="text-sm font-headline font-bold text-on-surface tracking-tight">Best Ways to Use</h3>
-          <span class="text-[11px] font-label text-primary font-medium">3 Preset Blueprints</span>
-        </div>
-
-        <!-- Card 1: Overnight Sleeper Trains -->
-        <div class="bg-surface-container rounded-xl p-3.5 flex flex-col gap-2.5 shadow-sm border border-outline-variant/40">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-[19px]">bedtime</span>
-              </div>
-              <div>
-                <h4 class="text-xs font-headline font-bold text-on-surface leading-none">Overnight Sleeper Trains</h4>
-                <span class="text-[10px] font-label text-on-surface-variant">Express &amp; Sleeper Coaches</span>
-              </div>
-            </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-label font-semibold bg-primary/15 text-primary border border-primary/20">
-              Long Distance
-            </span>
-          </div>
-          <p class="text-xs font-body text-on-surface-variant leading-relaxed">
-            Configure 15 km pre-warning soft chimes + 5 km loud failsafe sirens so you have ample time to gather luggage and wake up peacefully.
-          </p>
-          <div class="bg-surface-container-lowest p-2 rounded-lg flex items-center gap-2 border border-outline-variant/30">
-            <span class="material-symbols-outlined text-[16px] text-tertiary">tune</span>
-            <div class="flex flex-col">
-              <span class="text-[9px] font-label text-secondary font-semibold uppercase tracking-wider">Recommended Setup</span>
-              <span class="text-[11px] font-label text-on-surface font-medium">15 km buffer • Train Horn Tone • Snooze: Off</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 2: Daily Metro Power Naps -->
-        <div class="bg-surface-container rounded-xl p-3.5 flex flex-col gap-2.5 shadow-sm border border-outline-variant/40">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary">
-                <span class="material-symbols-outlined text-[19px]">subway</span>
-              </div>
-              <div>
-                <h4 class="text-xs font-headline font-bold text-on-surface leading-none">Daily Metro Power Naps</h4>
-                <span class="text-[10px] font-label text-on-surface-variant">Underground &amp; Urban Transit</span>
-              </div>
-            </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-label font-semibold bg-tertiary/15 text-tertiary border border-tertiary/20">
-              Daily Commute
-            </span>
-          </div>
-          <p class="text-xs font-body text-on-surface-variant leading-relaxed">
-            Set short 1.2 km geofences with vibration-only pulses designed for silent cars and packed commuter trains without waking neighbors.
-          </p>
-          <div class="bg-surface-container-lowest p-2 rounded-lg flex items-center gap-2 border border-outline-variant/30">
-            <span class="material-symbols-outlined text-[16px] text-tertiary">tune</span>
-            <div class="flex flex-col">
-              <span class="text-[9px] font-label text-secondary font-semibold uppercase tracking-wider">Recommended Setup</span>
-              <span class="text-[11px] font-label text-on-surface font-medium">1.2 km buffer • Haptic Pulse Only • Earphones Mode</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 3: Anti-Oversleep Verification -->
-        <div class="bg-surface-container rounded-xl p-3.5 flex flex-col gap-2.5 shadow-sm border border-outline-variant/40">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-[19px]">psychology_alt</span>
-              </div>
-              <div>
-                <h4 class="text-xs font-headline font-bold text-on-surface leading-none">Anti-Oversleep Verification</h4>
-                <span class="text-[10px] font-label text-on-surface-variant">Cognitive Awakeness Check</span>
-              </div>
-            </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-label font-semibold bg-surface-container-highest text-on-surface-variant border border-outline-variant/30">
-              Heavy Sleepers
-            </span>
-          </div>
-          <p class="text-xs font-body text-on-surface-variant leading-relaxed">
-            Solve rapid mental arithmetic or pattern lock before alarm mutes. Prevents accidental sleep dismissals while disoriented.
-          </p>
-          <div class="bg-surface-container-lowest p-2 rounded-lg flex items-center gap-2 border border-outline-variant/30">
-            <span class="material-symbols-outlined text-[16px] text-tertiary">tune</span>
-            <div class="flex flex-col">
-              <span class="text-[9px] font-label text-secondary font-semibold uppercase tracking-wider">Recommended Setup</span>
-              <span class="text-[11px] font-label text-on-surface font-medium">Math Lock Active • Dynamic Arithmetic • Shake Failsafe</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- FAQ Accordion -->
-      <section class="flex flex-col gap-2.5">
-        <div class="flex items-center gap-1.5 px-1">
-          <span class="material-symbols-outlined text-on-surface-variant text-[17px]">forum</span>
-          <h3 class="text-sm font-headline font-bold text-on-surface tracking-tight">Commuter Tips &amp; FAQ</h3>
-        </div>
-
-        <div class="bg-surface-container rounded-xl overflow-hidden shadow-sm border border-outline-variant/40">
-          <button class="faq-toggle w-full p-3.5 text-left flex items-center justify-between gap-3 text-on-surface hover:bg-surface-container-high/40 transition-colors">
-            <span class="text-xs font-headline font-semibold text-on-surface leading-tight">
-              Does DestiWake work when the phone is locked in my pocket?
-            </span>
-            <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform">expand_more</span>
-          </button>
-          <div class="faq-content hidden px-3.5 pb-3 text-xs text-on-surface-variant leading-relaxed border-t border-outline-variant/20 pt-2">
-            Yes! DestiWake utilizes the Screen Wake Lock API and high-priority Web Audio hardware oscillators. It continues distance calculation and sounds the alarm through system speakers or headphones.
-          </div>
-        </div>
-
-        <div class="bg-surface-container rounded-xl overflow-hidden shadow-sm border border-outline-variant/40">
-          <button class="faq-toggle w-full p-3.5 text-left flex items-center justify-between gap-3 text-on-surface hover:bg-surface-container-high/40 transition-colors">
-            <span class="text-xs font-headline font-semibold text-on-surface leading-tight">
-              What happens if GPS signal drops in a tunnel?
-            </span>
-            <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform">expand_more</span>
-          </button>
-          <div class="faq-content hidden px-3.5 pb-3 text-xs text-on-surface-variant leading-relaxed border-t border-outline-variant/20 pt-2">
-            DestiWake has built-in Dead-Reckoning Velocity Extrapolation. It calculates your vehicle's last smoothed speed vector (e.g. 90 km/h) to anticipate your position until satellite signals re-establish.
-          </div>
-        </div>
-      </section>
-    </div>
 
 
     <!-- ========================================== -->
@@ -760,14 +485,14 @@
             <span class="text-[11px] font-label uppercase tracking-widest text-on-surface-variant font-medium">Terminal Station</span>
             <h1 class="text-xl font-headline font-black tracking-tight text-on-surface mt-0.5" id="alarmDestTitle">GRAND CENTRAL TERMINAL</h1>
             <div class="flex items-center gap-2 mt-1">
-              <span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary text-[10px] font-label font-bold tracking-tight" id="alarmPlatformTag">Target Geofence</span>
-              <span class="text-[11px] font-label text-on-surface-variant" id="alarmLineTag">Approaching Destination</span>
+              <span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary text-[10px] font-label font-bold tracking-tight" id="alarmPlatformTag">10 KM Geofence</span>
+              <span class="text-[11px] font-label text-on-surface-variant" id="alarmLineTag">Express Rail • Approaching</span>
             </div>
           </div>
           <div class="flex flex-col items-end">
-            <span class="text-[10px] font-label uppercase tracking-widest text-error font-bold">Time To Station</span>
+            <span class="text-[10px] font-label uppercase tracking-widest text-error font-bold">Estimated Arrival</span>
             <div class="flex items-baseline gap-1 mt-0.5 font-headline font-black text-2xl tracking-tighter text-on-surface">
-              <span class="tabular-nums" id="alarm-timer-min">04</span>:<span class="tabular-nums text-error" id="alarm-timer-sec">12</span>
+              <span class="tabular-nums" id="alarm-timer-min">03</span>:<span class="tabular-nums text-error" id="alarm-timer-sec">45</span>
             </div>
           </div>
         </div>
@@ -991,13 +716,7 @@
         <span class="text-[10px] font-label tracking-tight">Alarm Screen</span>
       </button>
 
-      <!-- Tab 3: Video Guide -->
-      <button class="nav-tab-btn flex flex-col items-center justify-center gap-1 flex-1 py-1 text-on-surface-variant transition-colors hover:text-on-surface" data-target="tab-video-guide" data-title="Video Guide &amp; Portal">
-        <span class="material-symbols-outlined text-[22px]">play_circle</span>
-        <span class="text-[10px] font-label tracking-tight">Video Guide</span>
-      </button>
-
-      <!-- Tab 4: History & Stats -->
+      <!-- Tab 3: History & Stats -->
       <button class="nav-tab-btn flex flex-col items-center justify-center gap-1 flex-1 py-1 text-on-surface-variant transition-colors hover:text-on-surface" data-target="tab-history-and-stats" data-title="History &amp; Stats">
         <span class="material-symbols-outlined text-[22px]">insights</span>
         <span class="text-[10px] font-label tracking-tight">Analytics</span>
@@ -1312,18 +1031,11 @@
       const originSuggestions = document.getElementById('originSuggestions');
       const destSuggestions = document.getElementById('destSuggestions');
       const swapRouteBtn = document.getElementById('swapRouteBtn');
-      const mapOriginLabel = document.getElementById('mapOriginLabel');
-      const mapDestLabel = document.getElementById('mapDestLabel');
       const alarmDestTitle = document.getElementById('alarmDestTitle');
 
       function updateStationLabels() {
-        if (originInput && mapOriginLabel) {
-          mapOriginLabel.textContent = originInput.value.split(',')[0].slice(0, 10);
-        }
-        if (destinationInput && mapDestLabel) {
-          const destShort = destinationInput.value.split(',')[0].slice(0, 13);
-          mapDestLabel.textContent = destShort;
-          if (alarmDestTitle) alarmDestTitle.textContent = destinationInput.value.toUpperCase();
+        if (destinationInput && alarmDestTitle) {
+          alarmDestTitle.textContent = destinationInput.value.toUpperCase();
         }
       }
 
@@ -1364,7 +1076,7 @@
               state.geofenceRadius = rad;
               geofenceSlider.value = rad;
               sliderValueDisplay.textContent = rad.toFixed(1);
-              svgGeofenceLabel.textContent = `${rad.toFixed(0)}km Fence`;
+              updateMapGeofenceRadius(rad);
             }
             suggestionsElem.classList.add('hidden');
             updateStationLabels();
@@ -1383,11 +1095,8 @@
       setupAutocomplete(originInput, originSuggestions);
       setupAutocomplete(destinationInput, destSuggestions);
 
-
-
       // --- VEHICLE PROFILES ---
       const vehiclePills = document.querySelectorAll('.vehicle-pill');
-      const transitVehicleTag = document.getElementById('transitVehicleTag');
       const vehicleProfileModel = document.getElementById('vehicleProfileModel');
 
       vehiclePills.forEach(pill => {
@@ -1405,16 +1114,12 @@
           document.getElementById('hudSpeed').textContent = state.speed;
 
           if (state.vehicle === 'train') {
-            transitVehicleTag.textContent = 'EXPRESS RAIL 1408';
             vehicleProfileModel.textContent = 'Model: Train v3';
           } else if (state.vehicle === 'metro') {
-            transitVehicleTag.textContent = 'METRO LINE 4 EXPRESS';
             vehicleProfileModel.textContent = 'Model: Urban Subway';
           } else if (state.vehicle === 'bus') {
-            transitVehicleTag.textContent = 'INTERCITY BUS 302';
             vehicleProfileModel.textContent = 'Model: Highway Coach';
           } else {
-            transitVehicleTag.textContent = 'CITY CAB TAXI';
             vehicleProfileModel.textContent = 'Model: Arterial Traffic';
           }
           recalculateNapWindow();
@@ -1431,9 +1136,6 @@
       const sliderValueDisplay = document.getElementById('sliderValueDisplay');
       const etaSlider = document.getElementById('etaSlider');
       const etaValueDisplay = document.getElementById('etaValueDisplay');
-      const svgGeofenceCircle = document.getElementById('svgGeofenceCircle');
-      const svgGeofenceGlow = document.getElementById('svgGeofenceGlow');
-      const svgGeofenceLabel = document.getElementById('svgGeofenceLabel');
       const ctaNapSubtitle = document.getElementById('ctaNapSubtitle');
       const alarmTriggerRadiusTag = document.getElementById('alarmTriggerRadiusTag');
 
@@ -1462,13 +1164,7 @@
       geofenceSlider.addEventListener('input', (e) => {
         state.geofenceRadius = parseFloat(e.target.value);
         sliderValueDisplay.textContent = state.geofenceRadius.toFixed(1);
-        if (svgGeofenceLabel) svgGeofenceLabel.textContent = `${state.geofenceRadius.toFixed(0)}km Fence`;
         if (alarmTriggerRadiusTag) alarmTriggerRadiusTag.textContent = `${state.geofenceRadius.toFixed(0)} KM`;
-
-        // Scale SVG radius visually (between 20px and 70px)
-        const visualR = 20 + (state.geofenceRadius / 45) * 50;
-        if (svgGeofenceCircle) svgGeofenceCircle.setAttribute('r', visualR);
-        if (svgGeofenceGlow) svgGeofenceGlow.setAttribute('r', visualR);
         updateMapGeofenceRadius(state.geofenceRadius);
         recalculateNapWindow();
       });
@@ -1726,6 +1422,47 @@
         }, 1000);
       }
 
+      // --- REAL-TIME GPS VELOCITY & DISTANCE/TIME DISPLACEMENT TRACKER ---
+      let prevGpsCoord = null;
+      let prevGpsTime = null;
+
+      function updateCalculatedGpsSpeed(lat, lng, hardwareSpeedMs) {
+        const now = Date.now();
+        let instantKmh = null;
+
+        // 1. Check if hardware reports a valid speed (m/s to km/h)
+        if (hardwareSpeedMs !== null && hardwareSpeedMs !== undefined && !isNaN(hardwareSpeedMs) && hardwareSpeedMs > 0.5) {
+          instantKmh = hardwareSpeedMs * 3.6;
+        } 
+        // 2. Otherwise calculate speed from distance delta / time delta: v = d / t
+        else if (prevGpsCoord && prevGpsTime) {
+          const deltaSec = (now - prevGpsTime) / 1000;
+          if (deltaSec >= 1.5) { // Minimum 1.5s window to avoid GPS coordinate jitter
+            const deltaKm = calculateDistanceKm(prevGpsCoord.lat, prevGpsCoord.lng, lat, lng);
+            const computedKmh = (deltaKm / deltaSec) * 3600;
+            // Filter realistic commuter transit speeds (between 3 km/h and 250 km/h)
+            if (computedKmh >= 3 && computedKmh <= 250) {
+              instantKmh = computedKmh;
+            }
+          }
+        }
+
+        if (instantKmh !== null) {
+          // Exponential Moving Average (EMA) to smooth out GPS noise
+          lastKnownSpeed = Math.round(0.4 * instantKmh + 0.6 * lastKnownSpeed);
+          state.speed = lastKnownSpeed;
+        } else if (!state.speed || state.speed <= 0) {
+          // Fallback to active transit vehicle profile speed
+          state.speed = state.vehicleSpeed || 80;
+        }
+
+        const hudSpeed = document.getElementById('hudSpeed');
+        if (hudSpeed) hudSpeed.textContent = state.speed;
+
+        prevGpsCoord = { lat, lng };
+        prevGpsTime = now;
+      }
+
       // --- ON-DEMAND LIVE GPS ENGINE (USER PERMISSION REQUIRED EVERY TRIP) ---
       function startLiveGpsTracking() {
         if (!('geolocation' in navigator)) {
@@ -1734,6 +1471,8 @@
         }
 
         stopLiveGpsTracking();
+        prevGpsCoord = null;
+        prevGpsTime = null;
 
         const gpsDot = document.getElementById('gpsIndicatorDot');
         const gpsText = document.getElementById('gpsIndicatorText');
@@ -1748,25 +1487,66 @@
             state.isGpsTrackingActive = true;
             lastGpsTimestamp = Date.now();
 
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            state.userLat = lat;
+            state.userLng = lng;
+
+            // Dynamically update map and user pin
+            if (userMarker) {
+              userMarker.setLatLng([lat, lng]);
+            }
+            if (routePolyline) {
+              routePolyline.setLatLngs([[lat, lng], [state.destLat, state.destLng]]);
+            }
+
+            // Dynamically recalculate remaining distance to destination
+            const dist = calculateDistanceKm(lat, lng, state.destLat, state.destLng);
+            state.distanceLeft = Math.round(dist * 10) / 10;
+            const hudDist = document.getElementById('hudDistance');
+            if (hudDist) hudDist.textContent = state.distanceLeft.toFixed(1);
+
+            // Dynamically calculate actual moving speed from distance & time
+            updateCalculatedGpsSpeed(lat, lng, pos.coords.speed);
+
+            // Dynamically update coordinates badge on map
+            const coordsBadge = document.getElementById('mapCoordsBadge');
+            if (coordsBadge) coordsBadge.textContent = `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+
+            // Update GPS HUD indicators
+            const precisionRibbon = document.getElementById('statusGpsPrecisionText');
+            const acc = pos.coords.accuracy ? `±${Math.round(pos.coords.accuracy)}m` : '±5m Lock';
+            if (precisionRibbon) precisionRibbon.textContent = acc;
+
             if (gpsDot && gpsText) {
               gpsDot.className = 'w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse';
-              const acc = pos.coords.accuracy ? `±${Math.round(pos.coords.accuracy)}m GPS` : 'Live GPS';
-              gpsText.textContent = acc;
+              gpsText.textContent = `${acc} GPS`;
               gpsText.className = 'text-[10px] font-label font-medium text-tertiary tracking-tight';
             }
 
-            if (pos.coords && pos.coords.speed !== null && pos.coords.speed !== undefined && !isNaN(pos.coords.speed)) {
-              const rawKmh = pos.coords.speed * 3.6;
-              if (rawKmh > 3) {
-                lastKnownSpeed = Math.round(0.3 * rawKmh + 0.7 * lastKnownSpeed);
-                state.speed = lastKnownSpeed;
-                const hudSpeed = document.getElementById('hudSpeed');
-                if (hudSpeed) hudSpeed.textContent = state.speed;
+            recalculateNapWindow();
+
+            // Check if user has entered geofence
+            const isFirstTrigger = state.distanceLeft <= state.geofenceRadius && !state.alarmSounding && !state.hasSecondaryAlarmFired;
+            const isSecondaryTrigger = state.isSecondaryAlarmArmed && state.distanceLeft <= state.secondaryTriggerDistance && !state.alarmSounding;
+
+            if (isFirstTrigger || isSecondaryTrigger) {
+              if (isSecondaryTrigger) {
+                state.isSecondaryAlarmArmed = false;
+                state.hasSecondaryAlarmFired = true;
               }
+              state.alarmSounding = true;
+              initOrResetCognitivePuzzle();
+              const spd = state.speed || 80;
+              startAlarmCountdown(Math.round((state.distanceLeft / spd) * 3600));
+              switchTab('tab-alarm-trigger', 'Alarm Trigger');
+              startSynthesizer(state.soundTone);
             }
           },
           (err) => {
             console.warn('GPS permission denied or signal unavailable:', err.message);
+            const precisionRibbon = document.getElementById('statusGpsPrecisionText');
+            if (precisionRibbon) precisionRibbon.textContent = 'Standby';
             if (gpsDot && gpsText) {
               gpsDot.className = 'w-1.5 h-1.5 rounded-full bg-red-400';
               gpsText.textContent = 'GPS Off / Denied';
@@ -1783,6 +1563,9 @@
           state.gpsWatchId = null;
         }
         state.isGpsTrackingActive = false;
+
+        const precisionRibbon = document.getElementById('statusGpsPrecisionText');
+        if (precisionRibbon) precisionRibbon.textContent = 'GPS Standby';
 
         const gpsDot = document.getElementById('gpsIndicatorDot');
         const gpsText = document.getElementById('gpsIndicatorText');
@@ -2055,6 +1838,7 @@
           toggleMapMode.classList.add('bg-tertiary', 'text-on-tertiary');
 
           simInterval = setInterval(() => {
+            const prevPt = simSteps[simStep];
             simStep = (simStep + 1) % simSteps.length;
             const pt = simSteps[simStep];
             state.userLat = pt.lat;
@@ -2065,6 +1849,16 @@
             }
             if (routePolyline) {
               routePolyline.setLatLngs([[pt.lat, pt.lng], [state.destLat, state.destLng]]);
+            }
+
+            // Dynamically calculate speed in simulation from delta distance / interval (1.8s)
+            if (prevPt) {
+              const legDistKm = calculateDistanceKm(prevPt.lat, prevPt.lng, pt.lat, pt.lng);
+              const simVelocityKmh = Math.round((legDistKm / 1.8) * 3600);
+              // Scale to realistic transit speeds
+              state.speed = simVelocityKmh > 10 && simVelocityKmh < 180 ? simVelocityKmh : (state.vehicleSpeed || 80);
+              const hudSpeed = document.getElementById('hudSpeed');
+              if (hudSpeed) hudSpeed.textContent = state.speed;
             }
 
             state.distanceLeft = pt.dist;
@@ -2099,205 +1893,45 @@
       });
 
       recenterBtn.addEventListener('click', () => {
-        if (leafletMap) {
+        if ('geolocation' in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              state.userLat = lat;
+              state.userLng = lng;
+              if (userMarker) userMarker.setLatLng([lat, lng]);
+              if (routePolyline) routePolyline.setLatLngs([[lat, lng], [state.destLat, state.destLng]]);
+
+              const dist = calculateDistanceKm(lat, lng, state.destLat, state.destLng);
+              state.distanceLeft = Math.round(dist * 10) / 10;
+              const hudDist = document.getElementById('hudDistance');
+              if (hudDist) hudDist.textContent = state.distanceLeft.toFixed(1);
+
+              const coordsBadge = document.getElementById('mapCoordsBadge');
+              if (coordsBadge) coordsBadge.textContent = `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+
+              if (originInput) originInput.value = `Current Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+              updateStationLabels();
+              recalculateNapWindow();
+
+              if (leafletMap) {
+                leafletMap.flyTo([lat, lng], 13, { duration: 0.8 });
+              }
+            },
+            (err) => {
+              if (leafletMap) {
+                leafletMap.flyTo([state.userLat, state.userLng], 12, { duration: 0.8 });
+              }
+            },
+            { enableHighAccuracy: true, timeout: 8000 }
+          );
+        } else if (leafletMap) {
           leafletMap.flyTo([state.userLat, state.userLng], 12, { duration: 0.8 });
         }
       });
 
-      // --- DUAL-MODE VIDEO PLAYER PORTAL ---
-      const videoContainer = document.getElementById('videoContainer');
-      const actualVideoPlayer = document.getElementById('actualVideoPlayer');
-      const placeholderCanvas = document.getElementById('placeholderCanvas');
-      const playCenterZone = document.getElementById('playCenterZone');
-      const centerPlayIcon = document.getElementById('centerPlayIcon');
-      const togglePlayBtn = document.getElementById('togglePlayBtn');
-      const scrubberPlayIcon = document.getElementById('scrubberPlayIcon');
-      const scrubberArea = document.getElementById('scrubberArea');
-      const scrubberFill = document.getElementById('scrubberFill');
-      const scrubberThumb = document.getElementById('scrubberThumb');
-      const timecodeDisplay = document.getElementById('timecodeDisplay');
-      const muteBtn = document.getElementById('muteBtn');
-      const volumeIcon = document.getElementById('volumeIcon');
-      const fullscreenBtn = document.getElementById('fullscreenBtn');
-      const localVideoPicker = document.getElementById('localVideoPicker');
-      const videoStatusText = document.getElementById('videoStatusText');
 
-      let isVideoLoaded = false;
-      let simulatedProgress = 28;
-      let simulatedPlayInterval = null;
-
-      localVideoPicker.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          loadVideoFile(file);
-        }
-      });
-
-      videoContainer.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        videoContainer.classList.add('ring-2', 'ring-primary');
-      });
-      videoContainer.addEventListener('dragleave', () => {
-        videoContainer.classList.remove('ring-2', 'ring-primary');
-      });
-      videoContainer.addEventListener('drop', (e) => {
-        e.preventDefault();
-        videoContainer.classList.remove('ring-2', 'ring-primary');
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-          loadVideoFile(e.dataTransfer.files[0]);
-        }
-      });
-
-      function loadVideoFile(file) {
-        const objUrl = URL.createObjectURL(file);
-        actualVideoPlayer.src = objUrl;
-        actualVideoPlayer.classList.remove('hidden');
-        placeholderCanvas.classList.add('hidden');
-        isVideoLoaded = true;
-        videoStatusText.textContent = `Playing: ${file.name}`;
-        actualVideoPlayer.play();
-        centerPlayIcon.textContent = 'pause';
-        scrubberPlayIcon.textContent = 'pause';
-      }
-
-      function togglePlayPause() {
-        if (isVideoLoaded && actualVideoPlayer.src) {
-          if (actualVideoPlayer.paused) {
-            actualVideoPlayer.play();
-            scrubberPlayIcon.textContent = 'pause';
-            centerPlayIcon.textContent = 'pause';
-          } else {
-            actualVideoPlayer.pause();
-            scrubberPlayIcon.textContent = 'play_arrow';
-            centerPlayIcon.textContent = 'play_arrow';
-          }
-        } else {
-          // Simulated demo playback
-          if (simulatedPlayInterval) {
-            clearInterval(simulatedPlayInterval);
-            simulatedPlayInterval = null;
-            scrubberPlayIcon.textContent = 'play_arrow';
-            centerPlayIcon.textContent = 'play_arrow';
-          } else {
-            scrubberPlayIcon.textContent = 'pause';
-            centerPlayIcon.textContent = 'pause';
-            simulatedPlayInterval = setInterval(() => {
-              simulatedProgress = (simulatedProgress + 1);
-              if (simulatedProgress > 100) simulatedProgress = 0;
-              scrubberFill.style.width = simulatedProgress + '%';
-              scrubberThumb.style.left = `calc(${simulatedProgress}% - 5px)`;
-              
-              const totalSec = 225;
-              const currSec = Math.floor((simulatedProgress / 100) * totalSec);
-              const m = Math.floor(currSec / 60);
-              const s = currSec % 60;
-              timecodeDisplay.textContent = `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s} / 03:45`;
-            }, 600);
-          }
-        }
-      }
-
-      playCenterZone.addEventListener('click', (e) => {
-        if (e.target.closest('label')) return;
-        togglePlayPause();
-      });
-      togglePlayBtn.addEventListener('click', togglePlayPause);
-
-      scrubberArea.addEventListener('click', (e) => {
-        const rect = scrubberArea.getBoundingClientRect();
-        const clickRatio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-        if (isVideoLoaded && actualVideoPlayer.duration) {
-          actualVideoPlayer.currentTime = clickRatio * actualVideoPlayer.duration;
-        } else {
-          simulatedProgress = Math.round(clickRatio * 100);
-          scrubberFill.style.width = simulatedProgress + '%';
-          scrubberThumb.style.left = `calc(${simulatedProgress}% - 5px)`;
-        }
-      });
-
-      actualVideoPlayer.addEventListener('timeupdate', () => {
-        if (!actualVideoPlayer.duration) return;
-        const pct = (actualVideoPlayer.currentTime / actualVideoPlayer.duration) * 100;
-        scrubberFill.style.width = pct + '%';
-        scrubberThumb.style.left = `calc(${pct}% - 5px)`;
-
-        const curM = Math.floor(actualVideoPlayer.currentTime / 60);
-        const curS = Math.floor(actualVideoPlayer.currentTime % 60);
-        const durM = Math.floor(actualVideoPlayer.duration / 60);
-        const durS = Math.floor(actualVideoPlayer.duration % 60);
-        timecodeDisplay.textContent = `${curM < 10 ? '0' + curM : curM}:${curS < 10 ? '0' + curS : curS} / ${durM < 10 ? '0' + durM : durM}:${durS < 10 ? '0' + durS : durS}`;
-      });
-
-      actualVideoPlayer.addEventListener('ended', () => {
-        scrubberPlayIcon.textContent = 'play_arrow';
-        centerPlayIcon.textContent = 'play_arrow';
-      });
-
-      muteBtn.addEventListener('click', () => {
-        if (isVideoLoaded) {
-          actualVideoPlayer.muted = !actualVideoPlayer.muted;
-          volumeIcon.textContent = actualVideoPlayer.muted ? 'volume_off' : 'volume_up';
-        } else {
-          const isMuted = volumeIcon.textContent === 'volume_off';
-          volumeIcon.textContent = isMuted ? 'volume_up' : 'volume_off';
-        }
-      });
-
-      fullscreenBtn.addEventListener('click', () => {
-        if (videoContainer.requestFullscreen) {
-          videoContainer.requestFullscreen();
-        } else if (actualVideoPlayer.webkitEnterFullscreen) {
-          actualVideoPlayer.webkitEnterFullscreen();
-        }
-      });
-
-      // Chapter Switching
-      const chapterTabs = document.querySelectorAll('.chapter-tab');
-      chapterTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          chapterTabs.forEach(t => {
-            t.classList.add('bg-surface-container-low', 'opacity-70');
-            t.classList.remove('bg-surface-container', 'opacity-100', 'border-primary/30');
-            const iconWrap = t.querySelector('div');
-            if (iconWrap) {
-              iconWrap.classList.remove('text-primary');
-              iconWrap.classList.add('text-on-surface-variant');
-            }
-          });
-          tab.classList.remove('bg-surface-container-low', 'opacity-70');
-          tab.classList.add('bg-surface-container', 'opacity-100', 'border-primary/30');
-          const iconWrap = tab.querySelector('div');
-          if (iconWrap) {
-            iconWrap.classList.add('text-primary');
-            iconWrap.classList.remove('text-on-surface-variant');
-          }
-
-          const chap = parseInt(tab.getAttribute('data-chapter'), 10);
-          if (isVideoLoaded && actualVideoPlayer.duration) {
-            actualVideoPlayer.currentTime = (chap / 3) * actualVideoPlayer.duration;
-          } else {
-            simulatedProgress = Math.round((chap / 3) * 100);
-            scrubberFill.style.width = simulatedProgress + '%';
-            scrubberThumb.style.left = `calc(${simulatedProgress}% - 5px)`;
-          }
-        });
-      });
-
-      // FAQ Accordion Toggles
-      document.querySelectorAll('.faq-toggle').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const content = btn.nextElementSibling;
-          const icon = btn.querySelector('.material-symbols-outlined');
-          const isOpen = !content.classList.contains('hidden');
-          if (isOpen) {
-            content.classList.add('hidden');
-            if (icon) icon.style.transform = 'rotate(0deg)';
-          } else {
-            content.classList.remove('hidden');
-            if (icon) icon.style.transform = 'rotate(180deg)';
-          }
-        });
-      });
 
       // --- DYNAMIC ALARM TRIGGER & COGNITIVE MATH ENGINE ---
       let alarmCountdownTimer = null;
@@ -2320,7 +1954,26 @@
 
       function startAlarmCountdown(initialSeconds) {
         if (alarmCountdownTimer) clearInterval(alarmCountdownTimer);
-        let sec = initialSeconds || 240;
+
+        // Dynamically compute remaining seconds based on real distance left and current speed
+        const speedKmh = state.speed || 80;
+        const computedSeconds = initialSeconds || Math.max(30, Math.round((state.distanceLeft / speedKmh) * 3600));
+        let sec = computedSeconds;
+
+        // Dynamically update Alarm Screen tags
+        const platformTag = document.getElementById('alarmPlatformTag');
+        if (platformTag) platformTag.textContent = `${state.geofenceRadius.toFixed(1)} KM Geofence`;
+
+        const lineTag = document.getElementById('alarmLineTag');
+        if (lineTag) {
+          const vName = state.vehicle === 'train' ? 'Express Rail' : state.vehicle === 'metro' ? 'Subway Metro' : state.vehicle === 'bus' ? 'Intercity Bus' : 'City Cab';
+          lineTag.textContent = `${vName} • ${state.distanceLeft.toFixed(1)} km away`;
+        }
+
+        const bannerSub = document.getElementById('alarmTriggerBannerSub');
+        if (bannerSub) {
+          bannerSub.textContent = `Within ${state.distanceLeft.toFixed(1)} km of ${destinationInput.value.split(',')[0]}`;
+        }
 
         function render() {
           const m = Math.floor(sec / 60);
