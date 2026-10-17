@@ -175,8 +175,9 @@
       <section class="w-full relative overflow-hidden rounded-xl bg-surface-container-low shadow-md border border-outline-variant/40">
         <!-- Real Interactive World Map Canvas (Leaflet + OpenStreetMap / Satellite + Google Maps Quick Link) -->
         <div class="relative w-full h-64 bg-surface-container-lowest overflow-hidden">
-          <!-- Leaflet Live Map Root -->
+          <!-- Map Canvases: Leaflet (Default) & Google Maps (Optional) -->
           <div id="liveLeafletMap" class="w-full h-full z-0"></div>
+          <div id="liveGoogleMap" class="w-full h-full z-0 hidden"></div>
 
           <!-- Google Maps Destination Search Bar & Overlay Controls -->
           <div class="absolute top-2.5 inset-x-2.5 z-20 flex items-center gap-1.5">
@@ -190,13 +191,16 @@
               <div id="mapSearchResults" class="hidden absolute top-full left-0 right-0 mt-1 bg-surface-container-high/95 backdrop-blur-md border border-outline-variant/60 rounded-xl shadow-2xl z-30 max-h-48 overflow-y-auto"></div>
             </div>
 
+            <button id="mapSettingsBtn" aria-label="Map Engine & API Key" class="w-9 h-9 rounded-xl bg-surface-container-highest/95 text-primary flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-md border border-outline-variant/60 flex-shrink-0" title="Map Settings & Google Maps API Key">
+              <span class="material-symbols-outlined text-[18px]">tune</span>
+            </button>
             <button id="toggleMapMode" aria-label="Toggle Route Animation" class="w-9 h-9 rounded-xl bg-surface-container-highest/95 text-on-surface flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-md border border-outline-variant/60 flex-shrink-0" title="Simulate Movement">
               <span class="material-symbols-outlined text-[18px]" id="simPlayIcon">fast_forward</span>
             </button>
             <button id="recenterBtn" aria-label="Recenter Track" class="w-9 h-9 rounded-xl bg-surface-container-highest/95 text-tertiary flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-md border border-outline-variant/60 flex-shrink-0" title="Recenter to My Location">
               <span class="material-symbols-outlined text-[18px]">my_location</span>
             </button>
-            <a id="openGoogleMapsBtn" href="https://maps.google.com" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-xl bg-surface-container-highest/95 text-primary flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-md border border-outline-variant/60 flex-shrink-0" title="Open Target in Google Maps">
+            <a id="openGoogleMapsBtn" href="https://maps.google.com" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-xl bg-surface-container-highest/95 text-on-surface-variant hover:text-primary flex items-center justify-center hover:bg-surface-container-high transition-colors shadow-md border border-outline-variant/60 flex-shrink-0" title="Open Target in Google Maps">
               <span class="material-symbols-outlined text-[18px]">open_in_new</span>
             </a>
           </div>
@@ -700,6 +704,75 @@
     </div>
 
   </main>
+
+  <!-- ========================================== -->
+  <!-- MAP SETTINGS & GOOGLE MAPS API KEY MODAL   -->
+  <!-- ========================================== -->
+  <div id="mapSettingsModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm">
+    <div class="w-full max-w-md bg-surface-container-high rounded-2xl p-4 shadow-2xl border border-outline-variant/50 space-y-3.5 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between border-b border-outline-variant/30 pb-2.5">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[20px]">layers</span>
+          <h3 class="text-sm font-headline font-bold text-on-surface">Map Engine & Provider</h3>
+        </div>
+        <button id="closeMapSettingsBtn" class="w-7 h-7 rounded-lg hover:bg-surface-container-highest flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <!-- Engine Selector -->
+      <div class="space-y-1.5">
+        <label class="text-[11px] font-label font-semibold uppercase text-on-surface-variant tracking-wider">Active Engine</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="selectLeafletBtn" type="button" class="flex flex-col items-start p-2.5 rounded-xl border border-primary/50 bg-primary/10 text-left transition-all">
+            <div class="flex items-center gap-1.5 font-headline font-bold text-xs text-primary">
+              <span class="material-symbols-outlined text-[16px]">public</span>
+              <span>OpenStreetMap</span>
+            </div>
+            <span class="text-[10px] text-on-surface-variant mt-1 leading-tight">100% Free · No API key needed · High-speed Photon Geocoder</span>
+          </button>
+          <button id="selectGoogleBtn" type="button" class="flex flex-col items-start p-2.5 rounded-xl border border-outline-variant/40 bg-surface-container text-left transition-all hover:border-primary/40">
+            <div class="flex items-center gap-1.5 font-headline font-bold text-xs text-on-surface">
+              <span class="material-symbols-outlined text-[16px]">map</span>
+              <span>Google Maps</span>
+            </div>
+            <span class="text-[10px] text-on-surface-variant mt-1 leading-tight">Places Autocomplete · Dark Theme · Cloud Map Styling</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Google Maps API Key Form -->
+      <div id="googleKeySection" class="space-y-2 pt-1 border-t border-outline-variant/20">
+        <div class="flex items-center justify-between">
+          <label for="googleMapsApiKeyInput" class="text-[11px] font-label font-semibold text-on-surface flex items-center gap-1">
+            <span class="material-symbols-outlined text-amber-400 text-[14px]">key</span>
+            Google Maps API Key
+          </label>
+          <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" rel="noopener noreferrer" class="text-[10px] text-primary hover:underline flex items-center gap-0.5">
+            Get Free Key ($200/mo) <span class="material-symbols-outlined text-[11px]">launch</span>
+          </a>
+        </div>
+        <div class="relative">
+          <input id="googleMapsApiKeyInput" type="password" placeholder="AIzaSy..." class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-xl px-3 py-2 text-xs text-on-surface font-mono placeholder-on-surface-variant/50 focus:outline-none focus:border-primary pr-9" />
+          <button id="toggleApiKeyVisibilityBtn" type="button" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface">
+            <span class="material-symbols-outlined text-[16px]" id="apiKeyVisIcon">visibility</span>
+          </button>
+        </div>
+        <div class="p-2 rounded-lg bg-surface-container-highest/60 border border-outline-variant/20 text-[10px] text-on-surface-variant leading-relaxed">
+          <strong class="text-on-surface">Note:</strong> Your key is stored securely inside your browser's private <code class="text-tertiary">localStorage</code> and never sent to any external server.
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button id="cancelMapSettingsBtn" type="button" class="px-3 py-1.5 text-xs font-label font-semibold text-on-surface-variant hover:text-on-surface">Close</button>
+        <button id="saveMapSettingsBtn" type="button" class="px-4 py-1.5 rounded-xl bg-primary text-on-primary text-xs font-headline font-bold flex items-center gap-1 hover:brightness-110 shadow-sm transition-all">
+          <span class="material-symbols-outlined text-[15px]">check</span>
+          <span>Apply Engine</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- BOTTOM NAVIGATION BAR (FIXED) -->
   <nav class="fixed bottom-0 max-w-md w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.6)] border-t border-outline-variant/40">
@@ -1492,13 +1565,8 @@
             state.userLat = lat;
             state.userLng = lng;
 
-            // Dynamically update map and user pin
-            if (userMarker) {
-              userMarker.setLatLng([lat, lng]);
-            }
-            if (routePolyline) {
-              routePolyline.setLatLngs([[lat, lng], [state.destLat, state.destLng]]);
-            }
+            // Dynamically update maps and user pin
+            syncMapUserMarker(lat, lng);
 
             // Dynamically recalculate remaining distance to destination
             const dist = calculateDistanceKm(lat, lng, state.destLat, state.destLng);
@@ -1579,6 +1647,79 @@
       // Auto turn off live GPS when user closes or navigates away from app
       window.addEventListener('beforeunload', stopLiveGpsTracking);
       window.addEventListener('pagehide', stopLiveGpsTracking);
+
+      // --- MAP ENGINES: LEAFLET (OSM) & GOOGLE MAPS DUAL ARCHITECTURE ---
+      let currentMapEngine = 'leaflet'; // 'leaflet' or 'google'
+      let googleMapsApiKey = localStorage.getItem('destiwake_gmaps_key') || '';
+      let googleMapsLoaded = false;
+      let googleMap = null;
+      let googleUserMarker = null;
+      let googleDestMarker = null;
+      let googleGeofenceCircle = null;
+      let googleRoutePolyline = null;
+      let googleAutocomplete = null;
+
+      // Dark Neon Custom Theme for Google Maps matching DestiWake
+      const GOOGLE_MAPS_DARK_STYLE = [
+        { elementType: 'geometry', stylers: [{ color: '#131315' }] },
+        { elementType: 'labels.text.stroke', stylers: [{ color: '#131315' }] },
+        { elementType: 'labels.text.fill', stylers: [{ color: '#9ca3af' }] },
+        {
+          featureType: 'administrative.locality',
+          elementType: 'labels.text.fill',
+          stylers: [{ color: '#d1d5db' }]
+        },
+        {
+          featureType: 'poi',
+          elementType: 'labels.text.fill',
+          stylers: [{ color: '#6b7280' }]
+        },
+        {
+          featureType: 'poi.park',
+          elementType: 'geometry',
+          stylers: [{ color: '#18241c' }]
+        },
+        {
+          featureType: 'road',
+          elementType: 'geometry',
+          stylers: [{ color: '#27272a' }]
+        },
+        {
+          featureType: 'road',
+          elementType: 'geometry.stroke',
+          stylers: [{ color: '#18181b' }]
+        },
+        {
+          featureType: 'road',
+          elementType: 'labels.text.fill',
+          stylers: [{ color: '#a1a1aa' }]
+        },
+        {
+          featureType: 'road.highway',
+          elementType: 'geometry',
+          stylers: [{ color: '#3f3f46' }]
+        },
+        {
+          featureType: 'transit',
+          elementType: 'geometry',
+          stylers: [{ color: '#222226' }]
+        },
+        {
+          featureType: 'transit.station',
+          elementType: 'labels.text.fill',
+          stylers: [{ color: '#34d399' }]
+        },
+        {
+          featureType: 'water',
+          elementType: 'geometry',
+          stylers: [{ color: '#090d16' }]
+        },
+        {
+          featureType: 'water',
+          elementType: 'labels.text.fill',
+          stylers: [{ color: '#3b82f6' }]
+        }
+      ];
 
       // --- LEAFLET MAP & SATELLITE/TILES ENGINE ---
       let leafletMap = null;
@@ -1676,13 +1817,210 @@
         initMapDestinationSearch();
       }
 
+      // --- DUAL MAP ENGINE SYNCHRONIZATION HELPERS ---
+      function syncMapUserMarker(lat, lng) {
+        if (userMarker) userMarker.setLatLng([lat, lng]);
+        if (googleUserMarker) googleUserMarker.setPosition({ lat, lng });
+        if (routePolyline) routePolyline.setLatLngs([[lat, lng], [state.destLat, state.destLng]]);
+        if (googleRoutePolyline) googleRoutePolyline.setPath([{ lat, lng }, { lat: state.destLat, lng: state.destLng }]);
+      }
+
+      function syncMapDestinationMarker(lat, lng) {
+        if (destMarker) destMarker.setLatLng([lat, lng]);
+        if (googleDestMarker) googleDestMarker.setPosition({ lat, lng });
+        if (geofenceCircle) geofenceCircle.setLatLng([lat, lng]);
+        if (googleGeofenceCircle) googleGeofenceCircle.setCenter({ lat, lng });
+        if (routePolyline) routePolyline.setLatLngs([[state.userLat, state.userLng], [lat, lng]]);
+        if (googleRoutePolyline) googleRoutePolyline.setPath([{ lat: state.userLat, lng: state.userLng }, { lat, lng }]);
+      }
+
+      function flyMapTo(lat, lng, zoom = 12) {
+        if (currentMapEngine === 'leaflet' && leafletMap) {
+          leafletMap.flyTo([lat, lng], zoom, { duration: 0.6 });
+        } else if (currentMapEngine === 'google' && googleMap) {
+          googleMap.panTo({ lat, lng });
+          googleMap.setZoom(zoom);
+        }
+      }
+
+      // --- GOOGLE MAPS API LOADER & INITIALIZATION ---
+      function loadGoogleMapsScript(apiKey, callback) {
+        if (window.google && window.google.maps) {
+          googleMapsLoaded = true;
+          if (callback) callback();
+          return;
+        }
+
+        const existingScript = document.getElementById('googleMapsScriptTag');
+        if (existingScript) existingScript.remove();
+
+        window.onGoogleMapsLoadedCallback = () => {
+          googleMapsLoaded = true;
+          if (callback) callback();
+        };
+
+        const script = document.createElement('script');
+        script.id = 'googleMapsScriptTag';
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&callback=onGoogleMapsLoadedCallback`;
+        script.async = true;
+        script.defer = true;
+        script.onerror = () => {
+          alert('Failed to load Google Maps. Please check that your API Key is valid and has "Maps JavaScript API" enabled in Google Cloud Console.');
+          switchMapEngine('leaflet');
+        };
+        document.head.appendChild(script);
+      }
+
+      function initGoogleMap() {
+        const googleContainer = document.getElementById('liveGoogleMap');
+        if (!googleContainer || !window.google || !window.google.maps) return;
+
+        googleMap = new google.maps.Map(googleContainer, {
+          center: { lat: state.userLat, lng: state.userLng },
+          zoom: 11,
+          styles: GOOGLE_MAPS_DARK_STYLE,
+          disableDefaultUI: true,
+          zoomControl: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false
+        });
+
+        // User Position Marker (Neon Green Pulse)
+        googleUserMarker = new google.maps.Marker({
+          position: { lat: state.userLat, lng: state.userLng },
+          map: googleMap,
+          title: 'Current Position',
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 7,
+            fillColor: '#34d399',
+            fillOpacity: 1,
+            strokeColor: '#059669',
+            strokeWeight: 3
+          }
+        });
+
+        // Wake Destination Marker (Purple Flag)
+        googleDestMarker = new google.maps.Marker({
+          position: { lat: state.destLat, lng: state.destLng },
+          map: googleMap,
+          title: 'Wake Target Destination',
+          icon: {
+            path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+            scale: 5,
+            fillColor: '#a78bfa',
+            fillOpacity: 1,
+            strokeColor: '#7c3aed',
+            strokeWeight: 2
+          }
+        });
+
+        // Geofence Perimeter Circle (Purple Glow)
+        googleGeofenceCircle = new google.maps.Circle({
+          strokeColor: '#a78bfa',
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: '#8b5cf6',
+          fillOpacity: 0.15,
+          map: googleMap,
+          center: { lat: state.destLat, lng: state.destLng },
+          radius: state.geofenceRadius * 1000
+        });
+
+        // Dynamic Route Polyline
+        googleRoutePolyline = new google.maps.Polyline({
+          path: [
+            { lat: state.userLat, lng: state.userLng },
+            { lat: state.destLat, lng: state.destLng }
+          ],
+          geodesic: true,
+          strokeColor: '#34d399',
+          strokeOpacity: 0.7,
+          strokeWeight: 2
+        });
+        googleRoutePolyline.setMap(googleMap);
+
+        // Click on Google Map to select destination
+        googleMap.addListener('click', (e) => {
+          const lat = e.latLng.lat();
+          const lng = e.latLng.lng();
+          setMapDestination(lat, lng, `Selected Pin (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+        });
+
+        // Attach Google Places Autocomplete to the search bar
+        const searchInput = document.getElementById('mapPlaceSearchInput');
+        if (searchInput && window.google.maps.places) {
+          try {
+            googleAutocomplete = new google.maps.places.Autocomplete(searchInput, {
+              fields: ['formatted_address', 'geometry', 'name']
+            });
+            googleAutocomplete.addListener('place_changed', () => {
+              const place = googleAutocomplete.getPlace();
+              if (place && place.geometry && place.geometry.location) {
+                const lat = place.geometry.location.lat();
+                const lng = place.geometry.location.lng();
+                setMapDestination(lat, lng, place.name || place.formatted_address);
+              }
+            });
+          } catch(err) {
+            console.warn('Google Places Autocomplete init warning:', err);
+          }
+        }
+      }
+
+      function switchMapEngine(engine) {
+        currentMapEngine = engine;
+        const leafletDiv = document.getElementById('liveLeafletMap');
+        const googleDiv = document.getElementById('liveGoogleMap');
+        const leafletBtn = document.getElementById('selectLeafletBtn');
+        const googleBtn = document.getElementById('selectGoogleBtn');
+
+        if (engine === 'google') {
+          if (!googleMapsApiKey) {
+            alert('Please enter a valid Google Maps API Key first.');
+            return;
+          }
+          if (leafletDiv) leafletDiv.classList.add('hidden');
+          if (googleDiv) googleDiv.classList.remove('hidden');
+
+          if (leafletBtn) {
+            leafletBtn.className = 'flex flex-col items-start p-2.5 rounded-xl border border-outline-variant/40 bg-surface-container text-left transition-all hover:border-primary/40';
+          }
+          if (googleBtn) {
+            googleBtn.className = 'flex flex-col items-start p-2.5 rounded-xl border border-primary/50 bg-primary/10 text-left transition-all';
+          }
+
+          loadGoogleMapsScript(googleMapsApiKey, () => {
+            if (!googleMap) {
+              initGoogleMap();
+            } else {
+              google.maps.event.trigger(googleMap, 'resize');
+              googleMap.setCenter({ lat: state.userLat, lng: state.userLng });
+            }
+          });
+        } else {
+          // Default Leaflet OpenStreetMap
+          if (googleDiv) googleDiv.classList.add('hidden');
+          if (leafletDiv) leafletDiv.classList.remove('hidden');
+
+          if (leafletBtn) {
+            leafletBtn.className = 'flex flex-col items-start p-2.5 rounded-xl border border-primary/50 bg-primary/10 text-left transition-all';
+          }
+          if (googleBtn) {
+            googleBtn.className = 'flex flex-col items-start p-2.5 rounded-xl border border-outline-variant/40 bg-surface-container text-left transition-all hover:border-primary/40';
+          }
+
+          if (leafletMap) leafletMap.invalidateSize();
+        }
+        localStorage.setItem('destiwake_map_engine', engine);
+      }
+
       function setMapDestination(lat, lng, labelText) {
         state.destLat = lat;
         state.destLng = lng;
 
-        if (destMarker) destMarker.setLatLng([lat, lng]);
-        if (geofenceCircle) geofenceCircle.setLatLng([lat, lng]);
-        if (routePolyline) routePolyline.setLatLngs([[state.userLat, state.userLng], [lat, lng]]);
+        syncMapDestinationMarker(lat, lng);
 
         destinationInput.value = labelText || `Target (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
         const mapSearchInput = document.getElementById('mapPlaceSearchInput');
@@ -1700,9 +2038,7 @@
         const hudDistance = document.getElementById('hudDistance');
         if (hudDistance) hudDistance.textContent = state.distanceLeft.toFixed(1);
 
-        if (leafletMap) {
-          leafletMap.flyTo([lat, lng], Math.max(leafletMap.getZoom(), 12), { duration: 0.6 });
-        }
+        flyMapTo(lat, lng, 12);
 
         recalculateNapWindow();
         savePreferencesToDevice();
@@ -1723,35 +2059,63 @@
             return;
           }
 
-          // Search known stations cache first
+          // 1. Search known stations cache first
           const localMatches = STATIONS_CACHE.filter(s => 
             s.name.toLowerCase().includes(query.toLowerCase()) || 
             s.city.toLowerCase().includes(query.toLowerCase())
           ).map(s => ({
             name: s.name,
-            subtext: s.city,
+            subtext: `${s.city} · Saved Transit Hub`,
             lat: s.lat,
             lng: s.lng,
             radius: s.defaultRadiusKm || 10
           }));
 
-          // Query live Nominatim / OpenStreetMap Places API for any location worldwide
+          // 2. Query Photon Komoot Geocoder (backed by OpenStreetMap worldwide, zero CORS blocks, super fast)
           let liveMatches = [];
           try {
-            const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
-            if (resp.ok) {
-              const data = await resp.json();
-              liveMatches = data.map(item => ({
-                name: item.display_name.split(',')[0],
-                subtext: item.display_name.split(',').slice(1, 3).join(',').trim(),
-                lat: parseFloat(item.lat),
-                lng: parseFloat(item.lon),
-                radius: 10
-              }));
+            const photonResp = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6`);
+            if (photonResp.ok) {
+              const data = await photonResp.json();
+              if (data && data.features) {
+                liveMatches = data.features.map(f => {
+                  const p = f.properties || {};
+                  const coords = f.geometry && f.geometry.coordinates;
+                  if (!coords || coords.length < 2) return null;
+                  const title = p.name || p.street || p.city || query;
+                  const details = [p.district, p.city, p.state, p.country].filter(Boolean).join(', ');
+                  return {
+                    name: title,
+                    subtext: details || p.osm_value || 'Global Location',
+                    lat: coords[1],
+                    lng: coords[0],
+                    radius: 10
+                  };
+                }).filter(Boolean);
+              }
             }
-          } catch(e) {}
+          } catch(e) {
+            console.warn('Photon geocoder unavailable, trying fallback:', e);
+          }
 
-          const combined = [...localMatches, ...liveMatches].slice(0, 6);
+          // 3. Fallback to OpenStreetMap Nominatim if Photon yields no matches
+          if (liveMatches.length === 0) {
+            try {
+              const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+              if (resp.ok) {
+                const data = await resp.json();
+                liveMatches = data.map(item => ({
+                  name: item.display_name.split(',')[0],
+                  subtext: item.display_name.split(',').slice(1, 3).join(',').trim(),
+                  lat: parseFloat(item.lat),
+                  lng: parseFloat(item.lon),
+                  radius: 10
+                }));
+              }
+            } catch(e) {}
+          }
+
+          const combined = [...localMatches, ...liveMatches].slice(0, 7);
           if (combined.length === 0) {
             resultsDropdown.innerHTML = `<div class="p-2.5 text-[11px] text-on-surface-variant text-center">No locations found. Tap directly on the map to pin.</div>`;
             resultsDropdown.classList.remove('hidden');
@@ -1811,6 +2175,9 @@
         if (geofenceCircle) {
           geofenceCircle.setRadius(radiusKm * 1000);
         }
+        if (googleGeofenceCircle) {
+          googleGeofenceCircle.setRadius(radiusKm * 1000);
+        }
       }
 
       // --- ROUTE SIMULATION & RECENTER ---
@@ -1844,12 +2211,7 @@
             state.userLat = pt.lat;
             state.userLng = pt.lng;
 
-            if (userMarker) {
-              userMarker.setLatLng([pt.lat, pt.lng]);
-            }
-            if (routePolyline) {
-              routePolyline.setLatLngs([[pt.lat, pt.lng], [state.destLat, state.destLng]]);
-            }
+            syncMapUserMarker(pt.lat, pt.lng);
 
             // Dynamically calculate speed in simulation from delta distance / interval (1.8s)
             if (prevPt) {
@@ -1900,8 +2262,7 @@
               const lng = pos.coords.longitude;
               state.userLat = lat;
               state.userLng = lng;
-              if (userMarker) userMarker.setLatLng([lat, lng]);
-              if (routePolyline) routePolyline.setLatLngs([[lat, lng], [state.destLat, state.destLng]]);
+              syncMapUserMarker(lat, lng);
 
               const dist = calculateDistanceKm(lat, lng, state.destLat, state.destLng);
               state.distanceLeft = Math.round(dist * 10) / 10;
@@ -1915,19 +2276,15 @@
               updateStationLabels();
               recalculateNapWindow();
 
-              if (leafletMap) {
-                leafletMap.flyTo([lat, lng], 13, { duration: 0.8 });
-              }
+              flyMapTo(lat, lng, 13);
             },
             (err) => {
-              if (leafletMap) {
-                leafletMap.flyTo([state.userLat, state.userLng], 12, { duration: 0.8 });
-              }
+              flyMapTo(state.userLat, state.userLng, 12);
             },
             { enableHighAccuracy: true, timeout: 8000 }
           );
-        } else if (leafletMap) {
-          leafletMap.flyTo([state.userLat, state.userLng], 12, { duration: 0.8 });
+        } else {
+          flyMapTo(state.userLat, state.userLng, 12);
         }
       });
 
@@ -2327,12 +2684,104 @@
         });
       }
 
+      // --- MAP SETTINGS MODAL & API KEY CONTROLS ---
+      const mapSettingsBtn = document.getElementById('mapSettingsBtn');
+      const mapSettingsModal = document.getElementById('mapSettingsModal');
+      const closeMapSettingsBtn = document.getElementById('closeMapSettingsBtn');
+      const cancelMapSettingsBtn = document.getElementById('cancelMapSettingsBtn');
+      const saveMapSettingsBtn = document.getElementById('saveMapSettingsBtn');
+      const selectLeafletBtn = document.getElementById('selectLeafletBtn');
+      const selectGoogleBtn = document.getElementById('selectGoogleBtn');
+      const googleMapsApiKeyInput = document.getElementById('googleMapsApiKeyInput');
+      const toggleApiKeyVisibilityBtn = document.getElementById('toggleApiKeyVisibilityBtn');
+      const apiKeyVisIcon = document.getElementById('apiKeyVisIcon');
+
+      let pendingEngineSelection = localStorage.getItem('destiwake_map_engine') || 'leaflet';
+
+      if (mapSettingsBtn && mapSettingsModal) {
+        mapSettingsBtn.addEventListener('click', () => {
+          if (googleMapsApiKeyInput) googleMapsApiKeyInput.value = googleMapsApiKey || '';
+          pendingEngineSelection = currentMapEngine;
+          updateEngineSelectionUI(pendingEngineSelection);
+          mapSettingsModal.classList.remove('hidden');
+        });
+
+        const hideModal = () => mapSettingsModal.classList.add('hidden');
+        if (closeMapSettingsBtn) closeMapSettingsBtn.addEventListener('click', hideModal);
+        if (cancelMapSettingsBtn) cancelMapSettingsBtn.addEventListener('click', hideModal);
+
+        mapSettingsModal.addEventListener('click', (e) => {
+          if (e.target === mapSettingsModal) hideModal();
+        });
+
+        function updateEngineSelectionUI(engine) {
+          if (engine === 'google') {
+            if (selectGoogleBtn) selectGoogleBtn.className = 'flex flex-col items-start p-2.5 rounded-xl border border-primary/50 bg-primary/10 text-left transition-all';
+            if (selectLeafletBtn) selectLeafletBtn.className = 'flex flex-col items-start p-2.5 rounded-xl border border-outline-variant/40 bg-surface-container text-left transition-all hover:border-primary/40';
+          } else {
+            if (selectLeafletBtn) selectLeafletBtn.className = 'flex flex-col items-start p-2.5 rounded-xl border border-primary/50 bg-primary/10 text-left transition-all';
+            if (selectGoogleBtn) selectGoogleBtn.className = 'flex flex-col items-start p-2.5 rounded-xl border border-outline-variant/40 bg-surface-container text-left transition-all hover:border-primary/40';
+          }
+        }
+
+        if (selectLeafletBtn) {
+          selectLeafletBtn.addEventListener('click', () => {
+            pendingEngineSelection = 'leaflet';
+            updateEngineSelectionUI('leaflet');
+          });
+        }
+
+        if (selectGoogleBtn) {
+          selectGoogleBtn.addEventListener('click', () => {
+            pendingEngineSelection = 'google';
+            updateEngineSelectionUI('google');
+          });
+        }
+
+        if (toggleApiKeyVisibilityBtn && googleMapsApiKeyInput && apiKeyVisIcon) {
+          toggleApiKeyVisibilityBtn.addEventListener('click', () => {
+            if (googleMapsApiKeyInput.type === 'password') {
+              googleMapsApiKeyInput.type = 'text';
+              apiKeyVisIcon.textContent = 'visibility_off';
+            } else {
+              googleMapsApiKeyInput.type = 'password';
+              apiKeyVisIcon.textContent = 'visibility';
+            }
+          });
+        }
+
+        if (saveMapSettingsBtn) {
+          saveMapSettingsBtn.addEventListener('click', () => {
+            const enteredKey = (googleMapsApiKeyInput ? googleMapsApiKeyInput.value.trim() : '');
+            googleMapsApiKey = enteredKey;
+            localStorage.setItem('destiwake_gmaps_key', enteredKey);
+
+            if (pendingEngineSelection === 'google') {
+              if (!enteredKey) {
+                alert('Please enter your Google Maps API Key to switch to Google Maps mode.');
+                return;
+              }
+              switchMapEngine('google');
+            } else {
+              switchMapEngine('leaflet');
+            }
+            hideModal();
+          });
+        }
+      }
+
       // Load on-device preferences & sync
       loadPreferencesFromDevice();
       checkBackendSync();
       startDeadReckoningWatcher();
       recalculateNapWindow();
       initLeafletMap();
+
+      // Check saved map engine preference
+      const savedEngine = localStorage.getItem('destiwake_map_engine') || 'leaflet';
+      if (savedEngine === 'google' && googleMapsApiKey) {
+        switchMapEngine('google');
+      }
 
       // Ensure Leaflet tiles calculate dimensions properly
       window.addEventListener('resize', () => {
